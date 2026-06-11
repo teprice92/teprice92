@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RocketPipe · Mission Control for GitLab CI/CD</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🚀&lt;/text&gt;&lt;/svg&gt;" />
+</head>
+<body>
+  <canvas id="starfield"></canvas>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-rocket">🚀</span>
+      <div class="brand-text">
+        <h1>RocketPipe</h1>
+        <span class="tagline">Mission Control for GitLab CI/CD</span>
+      </div>
+    </div>
+
+    <nav class="event-tabs" id="eventTabs" aria-label="Pipeline trigger event">
+      <button class="event-tab" data-trigger="push" title="Simulate a commit pushed to the default branch">
+        <span class="event-icon">☄️</span> Commit Push
+      </button>
+      <button class="event-tab" data-trigger="merge_request" title="Simulate a merge request pipeline">
+        <span class="event-icon">🛸</span> Merge Request
+      </button>
+      <button class="event-tab" data-trigger="tag" title="Simulate a tag being pushed (release)">
+        <span class="event-icon">🪐</span> Tag
+      </button>
+    </nav>
+
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" id="btnReset" title="Reset to the demo mission">↺ Reset Demo</button>
+      <button class="btn btn-primary" id="btnExport">⬇ Export .gitlab-ci.yml</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ── Left: launch pad / job palette ───────────────────────── -->
+    <aside class="palette panel">
+      <h2 class="panel-title">🧰 Launch Pad</h2>
+      <p class="panel-hint">Drag a module onto a stage to add a job.</p>
+      <div id="paletteList" class="palette-list"></div>
+      <div class="palette-divider"></div>
+      <button class="btn btn-ghost btn-block" id="btnAddStage">＋ Add Stage</button>
+    </aside>
+
+    <!-- ── Center: pipeline canvas ──────────────────────────────── -->
+    <section class="canvas">
+      <div class="event-banner" id="eventBanner"></div>
+      <div class="stages-wrap" id="stagesWrap"></div>
+      <div class="mission-status" id="missionStatus"></div>
+    </section>
+
+    <!-- ── Right: variables & imports ───────────────────────────── -->
+    <aside class="sidebar panel">
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" data-tab="vars">🛰 Variables</button>
+        <button class="sidebar-tab" data-tab="includes">📡 Imports</button>
+      </div>
+
+      <div class="sidebar-pane" id="pane-vars">
+        <h3 class="pane-title">Predefined CI Variables</h3>
+        <p class="panel-hint">Values shown for the selected event. Click a variable to copy <code>$NAME</code>.</p>
+        <div id="predefinedVars" class="var-list"></div>
+        <h3 class="pane-title">Custom Variables</h3>
+        <div id="customVars" class="var-list"></div>
+        <form id="addVarForm" class="add-var-form">
+          <input type="text" id="newVarKey" placeholder="KEY" pattern="[A-Za-z_][A-Za-z0-9_]*" required />
+          <input type="text" id="newVarValue" placeholder="value" />
+          <button class="btn btn-ghost" type="submit">＋</button>
+        </form>
+        <div id="importedVars"></div>
+      </div>
+
+      <div class="sidebar-pane hidden" id="pane-includes">
+        <h3 class="pane-title">Imported Pipelines</h3>
+        <p class="panel-hint">Visualize <code>include:</code> files from other repositories alongside your own jobs.</p>
+        <div id="includeList" class="include-list"></div>
+        <button class="btn btn-ghost btn-block" id="btnAddInclude">＋ Add Include</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ── Job editor modal ───────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="jobModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="jobModalTitle">Edit Job</h2>
+        <button class="modal-close" data-close="jobModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="imported-note hidden" id="jobImportedNote"></div>
+        <div class="form-row">
+          <label>Job name
+            <input type="text" id="jobName" placeholder="build-rocket" />
+          </label>
+          <label>Stage
+            <select id="jobStage"></select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>Image <span class="muted">(optional)</span>
+            <input type="text" id="jobImage" placeholder="node:20-alpine" />
+          </label>
+        </div>
+        <label>Script <span class="muted">(one command per line)</span>
+          <textarea id="jobScript" rows="4" spellcheck="false"></textarea>
+        </label>
+
+        <div class="rules-head">
+          <h3>🧭 Rules <span class="muted">— when should this job launch?</span></h3>
+        </div>
+        <p class="panel-hint">Rules are checked top-to-bottom; the first match decides. No rules = always runs.</p>
+        <div class="rule-presets" id="rulePresets">
+          <span class="muted">Quick add:</span>
+          <button type="button" class="chip" data-preset="branch">default branch</button>
+          <button type="button" class="chip" data-preset="mr">merge requests</button>
+          <button type="button" class="chip" data-preset="tag">tags</button>
+          <button type="button" class="chip" data-preset="manual">manual gate</button>
+        </div>
+        <div id="rulesList" class="rules-list"></div>
+        <button type="button" class="btn btn-ghost" id="btnAddRule">＋ Add Rule</button>
+
+        <div class="rule-builder">
+          <h4>Condition helper</h4>
+          <div class="rule-builder-row">
+            <select id="rbVar"></select>
+            <select id="rbOp">
+              <option value="==">==</option>
+              <option value="!=">!=</option>
+              <option value="=~">=~ (regex)</option>
+              <option value="exists">is set</option>
+              <option value="missing">is not set</option>
+            </select>
+            <input type="text" id="rbVal" placeholder='"value" or /regex/' />
+            <button type="button" class="btn btn-ghost" id="rbAdd">Insert ↑</button>
+          </div>
+          <p class="panel-hint">Builds a condition and appends it to the last rule's IF expression.</p>
+        </div>
+
+        <label class="needs-label">Needs <span class="muted">(run as soon as these jobs finish)</span></label>
+        <div id="jobNeeds" class="needs-list"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-danger" id="btnDeleteJob">🗑 Delete Job</button>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" data-close="jobModal">Cancel</button>
+        <button class="btn btn-primary" id="btnSaveJob">Save Job</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Include modal ──────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="includeModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>📡 Add Included Pipeline</h2>
+        <button class="modal-close" data-close="includeModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label>Include type
+            <select id="incType">
+              <option value="project">project (another repository)</option>
+              <option value="remote">remote (URL)</option>
+              <option value="template">template (GitLab built-in)</option>
+              <option value="local">local (this repository)</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row" id="incProjectRow">
+          <label>Project path
+            <input type="text" id="incProject" placeholder="my-group/shared-ci" />
+          </label>
+          <label>Ref
+            <input type="text" id="incRef" placeholder="main" />
+          </label>
+        </div>
+        <label id="incFileLabel">File path
+          <input type="text" id="incFile" placeholder="/templates/deploy.yml" />
+        </label>
+        <label>YAML content <span class="muted">(paste the included file's contents to visualize its jobs)</span>
+          <textarea id="incYaml" rows="10" spellcheck="false" placeholder="lint-shared:&#10;  stage: test&#10;  script:&#10;    - shared-lint ."></textarea>
+        </label>
+        <div class="form-error hidden" id="incError"></div>
+      </div>
+      <div class="modal-foot">
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" data-close="includeModal">Cancel</button>
+        <button class="btn btn-primary" id="btnSaveInclude">Add &amp; Visualize</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Export modal ───────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="exportModal">
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h2>⬇ .gitlab-ci.yml</h2>
+        <button class="modal-close" data-close="exportModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <pre id="exportYaml" class="yaml-out"></pre>
+      </div>
+      <div class="modal-foot">
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" id="btnCopyYaml">📋 Copy</button>
+        <button class="btn btn-primary" id="btnDownloadYaml">⬇ Download</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="vendor/js-yaml.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
