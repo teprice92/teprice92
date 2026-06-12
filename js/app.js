@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   RocketPipe · Mission Control for GitLab CI/CD
+   Strata · Visual GitLab CI/CD Pipeline Builder
    Drag & drop pipeline builder with event simulation, includes
    visualization, variable awareness and rules building.
    ════════════════════════════════════════════════════════════════ */
@@ -7,7 +7,8 @@
 
 /* ── Constants ─────────────────────────────────────────────────── */
 
-const STORAGE_KEY = "rocketpipe-state-v1";
+const STORAGE_KEY = "strata-state-v1";
+const STORAGE_KEY_LEGACY = "rocketpipe-state-v1";
 
 const TRIGGERS = {
   push: {
@@ -132,10 +133,15 @@ function saveState() {
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    // Try the current key first, then migrate from old RocketPipe key
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY_LEGACY);
     if (raw) {
       const s = JSON.parse(raw);
-      if (s && Array.isArray(s.stages) && Array.isArray(s.jobs)) return s;
+      if (s && Array.isArray(s.stages) && Array.isArray(s.jobs)) {
+        // Remove legacy key if present
+        localStorage.removeItem(STORAGE_KEY_LEGACY);
+        return s;
+      }
     }
   } catch (e) { /* fall through */ }
   return demoState();
@@ -535,17 +541,28 @@ function renderIncludes() {
   for (const inc of state.includes) {
     const jobCount = state.jobs.filter((j) => j.source === inc.id).length;
     const varCount = (inc.variables || []).length;
+
+    const statsChildren = [];
+    if (inc.noContent) {
+      statsChildren.push(el("span", { style: "color:var(--warn)" }, "⚠ Paste YAML content to visualize jobs"));
+    } else {
+      statsChildren.push(document.createTextNode(
+        `${jobCount} job${jobCount === 1 ? "" : "s"}${varCount ? ` · ${varCount} variable${varCount === 1 ? "" : "s"}` : ""}${inc.hiddenJobs ? ` · ${inc.hiddenJobs} hidden template${inc.hiddenJobs === 1 ? "" : "s"}` : ""}`));
+    }
+
+    const actions = [el("button", { class: "btn btn-danger", onclick: () => removeInclude(inc.id) }, "Remove")];
+    if (inc.noContent) {
+      actions.unshift(el("button", { class: "btn btn-ghost", onclick: () => openPasteContentModal(inc.id) }, "📋 Paste content"));
+    }
+
     const card = el("div", { class: "include-card" },
       el("div", { class: "inc-title" }, "📡 ", includeLabel(inc)),
       el("div", { class: "inc-meta" },
-        inc.type === "project" ? `${inc.type} · ${inc.file} @ ${inc.ref || "HEAD"}` : `${inc.type}`),
-      el("div", { class: "inc-stats" },
-        `${jobCount} job${jobCount === 1 ? "" : "s"}${varCount ? ` · ${varCount} variable${varCount === 1 ? "" : "s"}` : ""}${inc.hiddenJobs ? ` · ${inc.hiddenJobs} hidden template${inc.hiddenJobs === 1 ? "" : "s"}` : ""}`),
-      el("div", { class: "inc-actions" },
-        el("button", { class: "btn btn-danger", onclick: () => removeInclude(inc.id) }, "Remove"),
-      ),
+        inc.type === "project" ? `${inc.type} · ${inc.file} @ ${inc.ref || "HEAD"}` : `${inc.type} · ${inc.file}`),
+      el("div", { class: "inc-stats" }, ...statsChildren),
+      el("div", { class: "inc-actions" }, ...actions),
     );
-    card.style.borderLeftColor = inc.color;
+    card.style.borderLeftColor = inc.noContent ? "var(--warn)" : inc.color;
     list.append(card);
   }
 }
@@ -919,7 +936,21 @@ function saveInclude() {
     return;
   }
 
-  state.includes.push(inc);
+  const replacingId = $("#includeModal").dataset.replacingId;
+  if (replacingId) {
+    // Replace the no-content stub that was detected during YAML import
+    const stubIdx = state.includes.findIndex((i) => i.id === replacingId);
+    if (stubIdx !== -1) {
+      inc.id = replacingId; // keep the same id
+      inc.color = state.includes[stubIdx].color;
+      state.includes[stubIdx] = inc;
+    } else {
+      state.includes.push(inc);
+    }
+    delete $("#includeModal").dataset.replacingId;
+  } else {
+    state.includes.push(inc);
+  }
   state.jobs.push(...newJobs);
   closeModal("includeModal");
   toast(`📡 Imported ${newJobs.length} job(s) from ${includeLabel(inc)}`);
@@ -930,6 +961,22 @@ function showIncError(msg) {
   const errBox = $("#incError");
   errBox.textContent = msg;
   errBox.classList.remove("hidden");
+}
+
+function openPasteContentModal(incId) {
+  const inc = includeById(incId);
+  if (!inc) return;
+  // Pre-fill the include modal with the detected metadata
+  $("#incType").value = inc.type;
+  $("#incType").dispatchEvent(new Event("change"));
+  $("#incProject").value = inc.project || "";
+  $("#incRef").value = inc.ref || "";
+  $("#incFile").value = inc.file || "";
+  $("#incYaml").value = "";
+  $("#incError").classList.add("hidden");
+  // Store the id so saveInclude can replace rather than add
+  $("#includeModal").dataset.replacingId = incId;
+  openModal("includeModal");
 }
 
 function removeInclude(id) {
@@ -959,6 +1006,155 @@ function addVariable(e) {
 
 function removeVariable(key) {
   state.variables = state.variables.filter((v) => v.key !== key);
+  render();
+}
+
+/* ── YAML import ───────────────────────────────────────────────── */
+
+function importYamlDoc(raw) {
+  let doc;
+  try { doc = jsyaml.load(raw); }
+  catch (e) { return { error: "YAML parse error:\n" + e.message }; }
+  if (!doc || typeof doc !== "object" || Array.isArray(doc)) {
+    return { error: "The YAML must be a top-level mapping." };
+  }
+
+  const newState = {
+    trigger: state.trigger,
+    stages: [],
+    jobs: [],
+    includes: state.includes,   // keep existing includes
+    variables: [],
+  };
+
+  // stages
+  if (Array.isArray(doc.stages)) {
+    newState.stages = doc.stages.map(String);
+  }
+
+  // top-level variables
+  if (doc.variables && typeof doc.variables === "object" && !Array.isArray(doc.variables)) {
+    for (const [k, v] of Object.entries(doc.variables)) {
+      const value = (v && typeof v === "object" && "value" in v) ? v.value : v;
+      newState.variables.push({ key: k, value: String(value ?? "") });
+    }
+  }
+
+  // include: entries — record them but don't auto-fetch YAML (user must paste content)
+  const incList = doc.include ? (Array.isArray(doc.include) ? doc.include : [doc.include]) : [];
+  const importedIncludes = [];
+  for (const entry of incList) {
+    if (!entry || typeof entry !== "object") continue;
+    let type, project = "", ref = "", file = "";
+    if (entry.project) {
+      type = "project";
+      project = String(entry.project);
+      file = Array.isArray(entry.file) ? entry.file[0] : String(entry.file || "");
+      ref = String(entry.ref || "");
+    } else if (entry.remote) {
+      type = "remote";
+      file = String(entry.remote);
+    } else if (entry.template) {
+      type = "template";
+      file = String(entry.template);
+    } else if (entry.local) {
+      type = "local";
+      file = String(entry.local);
+    } else {
+      continue;
+    }
+    // Check if this include was already present
+    const already = newState.includes.find((i) =>
+      i.type === type && i.file === file && i.project === project);
+    if (!already) {
+      importedIncludes.push({
+        id: uid(), type, project, ref, file, raw: "",
+        color: INCLUDE_COLORS[newState.includes.length % INCLUDE_COLORS.length],
+        variables: [], hiddenJobs: 0, noContent: true,
+      });
+    }
+  }
+  newState.includes = [...newState.includes, ...importedIncludes];
+
+  // jobs
+  for (const [key, def] of Object.entries(doc)) {
+    if (RESERVED_KEYS.has(key)) continue;
+    if (key.startsWith(".")) continue; // hidden templates
+    if (!def || typeof def !== "object" || Array.isArray(def)) continue;
+
+    let stage = typeof def.stage === "string" ? def.stage : "";
+    if (!stage) {
+      // GitLab default stage is "test" when none specified
+      stage = "test";
+    }
+    if (!newState.stages.includes(stage)) newState.stages.push(stage);
+
+    let script = [];
+    if (Array.isArray(def.script)) script = def.script.map(String);
+    else if (typeof def.script === "string") script = [def.script];
+
+    // before_script / after_script folded into script with comments
+    if (Array.isArray(def.before_script) && def.before_script.length) {
+      script = [...def.before_script.map(String), ...script];
+    }
+    if (Array.isArray(def.after_script) && def.after_script.length) {
+      script = [...script, ...def.after_script.map(String)];
+    }
+
+    let rules = parseRules(def.rules);
+    if (!rules.length && (def.only || def.except)) rules = onlyExceptToRules(def);
+
+    let needs = [];
+    if (Array.isArray(def.needs)) {
+      needs = def.needs.map((n) => (typeof n === "string" ? n : n?.job)).filter(Boolean);
+    }
+
+    // image may be a string or { name, entrypoint }
+    let image = "";
+    if (typeof def.image === "string") image = def.image;
+    else if (def.image && typeof def.image.name === "string") image = def.image.name;
+
+    newState.jobs.push({
+      id: uid(), name: key, stage, image, script, rules, needs, source: "local",
+    });
+  }
+
+  // if no stages discovered at all, create a sensible default
+  if (!newState.stages.length) newState.stages = ["build", "test", "deploy"];
+
+  return { state: newState, importedIncludes };
+}
+
+function openImportModal() {
+  $("#importYaml").value = "";
+  $("#importFile").value = "";
+  $("#importError").classList.add("hidden");
+  openModal("importModal");
+}
+
+function doImport() {
+  const raw = $("#importYaml").value.trim();
+  const errBox = $("#importError");
+  errBox.classList.add("hidden");
+  if (!raw) { errBox.textContent = "Paste a .gitlab-ci.yml or drop a file above."; errBox.classList.remove("hidden"); return; }
+
+  const result = importYamlDoc(raw);
+  if (result.error) { errBox.textContent = result.error; errBox.classList.remove("hidden"); return; }
+
+  state = result.state;
+  closeModal("importModal");
+
+  const inc = result.importedIncludes;
+  const msg = `Imported ${state.jobs.length} job(s) across ${state.stages.length} stage(s)` +
+    (inc.length ? ` · ${inc.length} include entry(ies) detected — paste their YAML in the Imports panel to visualize` : "");
+  toast(msg);
+
+  if (inc.length) {
+    // switch sidebar to includes tab so user notices the placeholder entries
+    document.querySelectorAll(".sidebar-tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === "includes"));
+    $("#pane-vars").classList.add("hidden");
+    $("#pane-includes").classList.remove("hidden");
+  }
   render();
 }
 
@@ -1011,7 +1207,7 @@ function buildYamlDoc() {
 
 function exportYaml() {
   const doc = buildYamlDoc();
-  const header = "# Generated by RocketPipe 🚀 — Mission Control for GitLab CI/CD\n";
+  const header = "# Generated by Strata — Visual GitLab CI/CD Pipeline Builder\n";
   let yaml;
   try {
     yaml = header + jsyaml.dump(doc, { lineWidth: 120, noRefs: true, quotingType: '"' });
@@ -1107,23 +1303,32 @@ function init() {
 
   // modal close buttons + overlay click
   document.querySelectorAll("[data-close]").forEach((btn) => {
-    btn.addEventListener("click", () => { closeModal(btn.dataset.close); pendingNewJob = null; });
+    btn.addEventListener("click", () => {
+      closeModal(btn.dataset.close);
+      pendingNewJob = null;
+      delete $("#includeModal").dataset.replacingId;
+    });
   });
   document.querySelectorAll(".modal-overlay").forEach((ov) => {
-    ov.addEventListener("mousedown", (e) => { if (e.target === ov) { ov.classList.add("hidden"); pendingNewJob = null; } });
+    ov.addEventListener("mousedown", (e) => {
+      if (e.target === ov) {
+        ov.classList.add("hidden");
+        pendingNewJob = null;
+        delete $("#includeModal").dataset.replacingId;
+      }
+    });
   });
   addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       document.querySelectorAll(".modal-overlay").forEach((ov) => ov.classList.add("hidden"));
       pendingNewJob = null;
+      delete $("#includeModal").dataset.replacingId;
     }
   });
 
   $("#btnAddStage").addEventListener("click", addStage);
   $("#btnExport").addEventListener("click", exportYaml);
-  $("#btnReset").addEventListener("click", () => {
-    if (confirm("Reset everything to the demo mission?")) { state = demoState(); render(); }
-  });
+  $("#btnImport").addEventListener("click", openImportModal);
 
   // job modal
   $("#btnSaveJob").addEventListener("click", saveJob);
@@ -1151,6 +1356,38 @@ function init() {
       : type === "template" ? "Jobs/SAST.gitlab-ci.yml"
       : "/templates/deploy.yml";
   });
+
+  // import modal
+  $("#btnDoImport").addEventListener("click", doImport);
+
+  // file drop on dropzone
+  const dropzone = $("#importDropzone");
+  dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("drag-over"); });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag-over"));
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("drag-over");
+    const file = e.dataTransfer.files[0];
+    if (file) readImportFile(file);
+  });
+  dropzone.addEventListener("click", (e) => {
+    // Let the label's <input> handle it; don't double-trigger
+    if (e.target.closest(".file-link")) return;
+    $("#importFile").click();
+  });
+  $("#importFile").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) readImportFile(file);
+  });
+
+  function readImportFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      $("#importYaml").value = e.target.result;
+      $("#importError").classList.add("hidden");
+    };
+    reader.readAsText(file);
+  }
 
   // export modal
   $("#btnCopyYaml").addEventListener("click", () => {

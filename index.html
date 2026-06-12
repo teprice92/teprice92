@@ -3,19 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RocketPipe · Mission Control for GitLab CI/CD</title>
+  <title>Strata · Visual GitLab CI/CD Pipeline Builder</title>
   <link rel="stylesheet" href="css/style.css" />
-  <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🚀&lt;/text&gt;&lt;/svg&gt;" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M24 4 44 14 24 24 4 14Z' fill='%2338c8f0'/%3E%3Cpath d='M9.6 19.2 4 22 24 32 44 22 38.4 19.2 24 26.4Z' fill='%237c5cff'/%3E%3Cpath d='M9.6 27.2 4 30 24 40 44 30 38.4 27.2 24 34.4Z' fill='%235a3de0'/%3E%3C/svg%3E" />
 </head>
 <body>
   <canvas id="starfield"></canvas>
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-rocket">🚀</span>
+      <svg class="brand-logo" viewBox="0 0 48 48" width="40" height="40" aria-hidden="true">
+        <defs>
+          <linearGradient id="strata-top" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5fe0ff" />
+            <stop offset="1" stop-color="#38c8f0" />
+          </linearGradient>
+          <linearGradient id="strata-mid" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#9d82ff" />
+            <stop offset="1" stop-color="#7c5cff" />
+          </linearGradient>
+          <linearGradient id="strata-low" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#6a4df0" />
+            <stop offset="1" stop-color="#4a30c4" />
+          </linearGradient>
+        </defs>
+        <path class="layer layer-3" d="M9.6 27.2 4 30 24 40 44 30 38.4 27.2 24 34.4Z" fill="url(#strata-low)" />
+        <path class="layer layer-2" d="M9.6 19.2 4 22 24 32 44 22 38.4 19.2 24 26.4Z" fill="url(#strata-mid)" />
+        <path class="layer layer-1" d="M24 4 44 14 24 24 4 14Z" fill="url(#strata-top)" />
+      </svg>
       <div class="brand-text">
-        <h1>RocketPipe</h1>
-        <span class="tagline">Mission Control for GitLab CI/CD</span>
+        <h1>Strata</h1>
+        <span class="tagline">Visual GitLab CI/CD Pipeline Builder</span>
       </div>
     </div>
 
@@ -32,7 +50,7 @@
     </nav>
 
     <div class="topbar-actions">
-      <button class="btn btn-ghost" id="btnReset" title="Reset to the demo mission">↺ Reset Demo</button>
+      <button class="btn btn-ghost" id="btnImport" title="Populate the builder from an existing .gitlab-ci.yml">⬆ Import YAML</button>
       <button class="btn btn-primary" id="btnExport">⬇ Export .gitlab-ci.yml</button>
     </div>
   </header>
@@ -191,6 +209,37 @@
         <div class="spacer"></div>
         <button class="btn btn-ghost" data-close="includeModal">Cancel</button>
         <button class="btn btn-primary" id="btnSaveInclude">Add &amp; Visualize</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Import modal ──────────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="importModal">
+    <div class="modal modal-wide">
+      <div class="modal-head">
+        <h2>⬆ Import .gitlab-ci.yml</h2>
+        <button class="modal-close" data-close="importModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="panel-hint">Load an existing pipeline file to pre-populate the builder. Jobs, stages, variables and <code>include:</code> entries are all imported. Your current pipeline will be replaced.</p>
+        <div class="import-dropzone" id="importDropzone">
+          <div class="dropzone-inner">
+            <svg width="36" height="36" viewBox="0 0 48 48" aria-hidden="true" style="opacity:.5">
+              <path d="M9.6 27.2 4 30 24 40 44 30 38.4 27.2 24 34.4Z" fill="#7c5cff"/>
+              <path d="M9.6 19.2 4 22 24 32 44 22 38.4 19.2 24 26.4Z" fill="#7c5cff" opacity=".6"/>
+              <path d="M24 4 44 14 24 24 4 14Z" fill="#38c8f0" opacity=".7"/>
+            </svg>
+            <p>Drop <code>.gitlab-ci.yml</code> here or <label class="file-link">browse<input type="file" id="importFile" accept=".yml,.yaml" /></label></p>
+          </div>
+        </div>
+        <div class="import-or">— or paste YAML —</div>
+        <textarea id="importYaml" rows="12" spellcheck="false" placeholder="stages:&#10;  - build&#10;  - test&#10;&#10;build-job:&#10;  stage: build&#10;  script:&#10;    - make build"></textarea>
+        <div class="form-error hidden" id="importError"></div>
+      </div>
+      <div class="modal-foot">
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" data-close="importModal">Cancel</button>
+        <button class="btn btn-primary" id="btnDoImport">⬆ Load Pipeline</button>
       </div>
     </div>
   </div>
