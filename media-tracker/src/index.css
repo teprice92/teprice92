@@ -1,0 +1,148 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ */
+/* Theme tokens                                                        */
+/*                                                                     */
+/* Every theme defines the same set of CSS variables; the active theme */
+/* is selected via `data-theme` on <html>. Tailwind v4 maps them into  */
+/* utility classes below (bg-surface, text-ink, border-edge, ...), so  */
+/* components never reference a concrete color.                        */
+/* ------------------------------------------------------------------ */
+
+:root,
+[data-theme='light'] {
+  --base: #f4f5f7;
+  --base-glow-a: #e0e7ff;
+  --base-glow-b: #fce7f3;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --ink: #0f172a;
+  --ink-muted: #475569;
+  --ink-faint: #94a3b8;
+  --edge: #e2e8f0;
+  --edge-strong: #cbd5e1;
+  --accent: #4f46e5;
+  --accent-2: #db2777;
+  --accent-ink: #ffffff;
+  --accent-soft: #eef2ff;
+  --glass: rgba(255, 255, 255, 0.72);
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 4px 12px rgba(15, 23, 42, 0.1), 0 16px 40px rgba(15, 23, 42, 0.12);
+}
+
+[data-theme='dark'] {
+  --base: #0b1220;
+  --base-glow-a: #16273f;
+  --base-glow-b: #1e1b38;
+  --surface: #131e30;
+  --surface-2: #1a2740;
+  --ink: #e6edf7;
+  --ink-muted: #9fb0c7;
+  --ink-faint: #64748b;
+  --edge: #223350;
+  --edge-strong: #31466b;
+  --accent: #22d3ee;
+  --accent-2: #a78bfa;
+  --accent-ink: #06202a;
+  --accent-soft: #12303e;
+  --glass: rgba(19, 30, 48, 0.72);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5), 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme='cyberpunk'] {
+  --base: #0d0221;
+  --base-glow-a: #2a0a4a;
+  --base-glow-b: #001b33;
+  --surface: #180b33;
+  --surface-2: #221145;
+  --ink: #f3e8ff;
+  --ink-muted: #c4a8e8;
+  --ink-faint: #7c5ea8;
+  --edge: #3d1a6e;
+  --edge-strong: #ff2ec4;
+  --accent: #ff2ec4;
+  --accent-2: #00f0ff;
+  --accent-ink: #1a0033;
+  --accent-soft: #2b0a4d;
+  --glass: rgba(24, 11, 51, 0.7);
+  --shadow: 0 0 0 1px rgba(255, 46, 196, 0.12), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 0 24px rgba(255, 46, 196, 0.25), 0 0 48px rgba(0, 240, 255, 0.12);
+}
+
+[data-theme='forest'] {
+  --base: #eee9dd;
+  --base-glow-a: #dde5d4;
+  --base-glow-b: #f3ead6;
+  --surface: #faf7ef;
+  --surface-2: #f1ece0;
+  --ink: #2b3530;
+  --ink-muted: #5c6b60;
+  --ink-faint: #93a094;
+  --edge: #ddd6c4;
+  --edge-strong: #c4bda6;
+  --accent: #4e7358;
+  --accent-2: #a8703f;
+  --accent-ink: #f6f3e9;
+  --accent-soft: #e3ead9;
+  --glass: rgba(250, 247, 239, 0.75);
+  --shadow: 0 1px 2px rgba(43, 53, 48, 0.07), 0 8px 24px rgba(43, 53, 48, 0.08);
+  --shadow-lg: 0 4px 12px rgba(43, 53, 48, 0.12), 0 16px 40px rgba(43, 53, 48, 0.14);
+}
+
+/* Map theme variables to Tailwind utility tokens (Tailwind v4 CSS-first config). */
+@theme inline {
+  --color-base: var(--base);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-edge: var(--edge);
+  --color-edge-strong: var(--edge-strong);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: var(--base);
+    background-image:
+      radial-gradient(60rem 40rem at 8% -10%, var(--base-glow-a), transparent 60%),
+      radial-gradient(50rem 36rem at 105% 15%, var(--base-glow-b), transparent 55%);
+    background-attachment: fixed;
+    color: var(--ink);
+    min-height: 100vh;
+    transition: background-color 300ms ease, color 300ms ease;
+  }
+
+  * {
+    border-color: var(--edge);
+  }
+}
+
+@layer utilities {
+  .glass {
+    background-color: var(--glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .card-shadow {
+    box-shadow: var(--shadow);
+  }
+
+  .card-shadow-lg {
+    box-shadow: var(--shadow-lg);
+  }
+}
