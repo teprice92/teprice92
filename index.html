@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <meta name="theme-color" content="#1a56db">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="My Voice">
 <title>My Voice — AAC Communication Board</title>
 <style>
   /* ============================================================
@@ -612,9 +616,11 @@
     utterance.onend = setBannerIdle;
     utterance.onerror = setBannerIdle;
 
-    // Some Chrome builds ignore speak() called too soon after cancel();
-    // a zero-delay timeout makes interruption reliable everywhere.
-    window.setTimeout(function () { synth.speak(utterance); }, 0);
+    // iOS Safari only permits speech started synchronously inside the
+    // user's tap, so speak() must not be deferred with a timeout.
+    synth.speak(utterance);
+    // Chrome can be left in a paused state after cancel(); nudge it.
+    if (synth.paused) synth.resume();
   }
 
   document.getElementById("stopBtn").addEventListener("click", function () {
