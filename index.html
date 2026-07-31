@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="theme-color" content="#1a56db">
+<title>My Voice — AAC Communication Board</title>
+<style>
+  /* ============================================================
+     THEME VARIABLES — light (default) and high-contrast dark mode
+     ============================================================ */
+  :root {
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --surface-2: #e9edf5;
+    --text: #14213d;
+    --text-muted: #4a5568;
+    --border: #14213d;
+    --accent: #1a56db;
+    --accent-text: #ffffff;
+    --speaking-bg: #fde047;
+    --speaking-text: #14213d;
+    --card-shadow: 0 3px 0 rgba(20, 33, 61, 0.35);
+    --focus-ring: #d97706;
+    --tab-inactive: #ffffff;
+    --stop-bg: #b91c1c;
+  }
+  html[data-theme="dark"] {
+    --bg: #000000;
+    --surface: #111111;
+    --surface-2: #1c1c1c;
+    --text: #ffffff;
+    --text-muted: #d1d5db;
+    --border: #ffffff;
+    --accent: #facc15;
+    --accent-text: #000000;
+    --speaking-bg: #facc15;
+    --speaking-text: #000000;
+    --card-shadow: 0 3px 0 rgba(255, 255, 255, 0.45);
+    --focus-ring: #22d3ee;
+    --tab-inactive: #111111;
+    --stop-bg: #ef4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    /* Removes the 300 ms tap delay and accidental double-tap zoom on cards */
+    touch-action: manipulation;
+  }
+
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 20px;
+    line-height: 1.4;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ============================================================
+     HEADER + SPEAKING BANNER
+     ============================================================ */
+  header {
+    background: var(--surface);
+    border-bottom: 3px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-buttons { display: flex; gap: 10px; }
+
+  .util-btn {
+    min-width: 64px;
+    min-height: 64px;
+    padding: 8px 14px;
+    font-size: 20px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 3px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: transform 0.08s ease;
+  }
+  .util-btn .util-icon { font-size: 26px; line-height: 1; }
+  .util-btn.pressed, .util-btn:active { transform: scale(0.93); }
+
+  #stopBtn {
+    background: var(--stop-bg);
+    color: #ffffff;
+    border-color: var(--border);
+  }
+
+  /* Banner showing the phrase currently being spoken */
+  #banner {
+    min-height: 76px;
+    background: var(--surface-2);
+    border-bottom: 3px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 12px 18px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: 800;
+    transition: background 0.2s ease;
+  }
+  #banner.speaking {
+    background: var(--speaking-bg);
+    color: var(--speaking-text);
+  }
+  #banner .banner-icon { font-size: 32px; }
+  #banner.speaking .banner-icon { animation: pulse 0.9s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.3); }
+  }
+  #bannerText { word-break: break-word; }
+  .banner-idle { color: var(--text-muted); font-weight: 600; font-size: 22px; }
+
+  /* ============================================================
+     CATEGORY TABS
+     ============================================================ */
+  nav[role="tablist"] {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 14px 16px 6px;
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .tab {
+    min-height: 88px;
+    padding: 10px 6px;
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    background: var(--tab-inactive);
+    border: 3px solid var(--border);
+    border-radius: 16px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.08s ease;
+  }
+  .tab .tab-icon { font-size: 30px; line-height: 1; }
+  .tab.pressed, .tab:active { transform: scale(0.95); }
+  .tab[aria-selected="true"] {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--border);
+  }
+
+  /* ============================================================
+     PHRASE CARD GRID
+     ============================================================ */
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 12px 16px 28px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    min-height: 130px;
+    min-width: 100px;
+    padding: 14px 10px;
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    background: var(--surface);
+    border: 4px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.08s ease, background 0.12s ease;
+    word-break: break-word;
+  }
+  .card .card-icon { font-size: 44px; line-height: 1; }
+  /* Immediate visual feedback: .pressed is added on touchstart/pointerdown */
+  .card.pressed, .card:active {
+    transform: scale(0.93);
+    background: var(--surface-2);
+  }
+  .card.is-speaking {
+    background: var(--speaking-bg);
+    color: var(--speaking-text);
+  }
+
+  /* Keyboard focus — big, obvious ring for switch/keyboard users */
+  .card:focus-visible, .tab:focus-visible, .util-btn:focus-visible,
+  #customText:focus-visible, #speakCustomBtn:focus-visible,
+  input[type="range"]:focus-visible {
+    outline: 5px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  /* ============================================================
+     CUSTOM MESSAGE PANEL
+     ============================================================ */
+  .custom-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .custom-panel label {
+    font-size: 22px;
+    font-weight: 800;
+  }
+  #customText {
+    width: 100%;
+    min-height: 130px;
+    padding: 16px;
+    font-family: inherit;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+    border: 4px solid var(--border);
+    border-radius: 16px;
+    resize: vertical;
+  }
+  #speakCustomBtn {
+    min-height: 100px;
+    font-family: inherit;
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--accent-text);
+    background: var(--accent);
+    border: 4px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: transform 0.08s ease;
+  }
+  #speakCustomBtn.pressed, #speakCustomBtn:active { transform: scale(0.96); }
+
+  .quick-clear {
+    align-self: flex-start;
+    min-height: 64px;
+    padding: 10px 22px;
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 3px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+  }
+  .quick-clear:active { transform: scale(0.95); }
+
+  /* ============================================================
+     SPEECH CONTROLS (volume / rate sliders)
+     ============================================================ */
+  .controls {
+    background: var(--surface);
+    border-top: 3px solid var(--border);
+    padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .controls-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .control-group { display: flex; flex-direction: column; gap: 6px; }
+  .control-group label {
+    font-size: 20px;
+    font-weight: 800;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .control-value { font-weight: 700; color: var(--text-muted); font-size: 18px; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 48px;            /* generous touch strip */
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 14px;
+    background: var(--surface-2);
+    border: 3px solid var(--border);
+    border-radius: 10px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 40px;
+    height: 40px;
+    margin-top: -16px;
+    background: var(--accent);
+    border: 3px solid var(--border);
+    border-radius: 50%;
+  }
+  input[type="range"]::-moz-range-track {
+    height: 14px;
+    background: var(--surface-2);
+    border: 3px solid var(--border);
+    border-radius: 10px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 34px;
+    height: 34px;
+    background: var(--accent);
+    border: 3px solid var(--border);
+    border-radius: 50%;
+  }
+
+  /* Unsupported-browser warning */
+  #noTTS {
+    display: none;
+    background: #b91c1c;
+    color: #ffffff;
+    font-weight: 800;
+    text-align: center;
+    padding: 14px;
+    font-size: 20px;
+  }
+
+  /* ============================================================
+     RESPONSIVE TWEAKS
+     ============================================================ */
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    header h1 { font-size: 22px; }
+    .tab { font-size: 16px; min-height: 80px; }
+    #banner { font-size: 22px; }
+  }
+  @media (min-width: 900px) {
+    .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+  <div id="noTTS" role="alert">
+    ⚠️ Speech is not supported in this browser. Please use Chrome, Edge, or Safari.
+  </div>
+
+  <header>
+    <h1><span aria-hidden="true">🗣️</span> My Voice</h1>
+    <div class="header-buttons">
+      <button id="stopBtn" class="util-btn" type="button" aria-label="Stop speaking">
+        <span class="util-icon" aria-hidden="true">⏹️</span>
+        <span>Stop</span>
+      </button>
+      <button id="themeBtn" class="util-btn" type="button"
+              aria-label="Switch to high contrast dark mode" aria-pressed="false">
+        <span class="util-icon" id="themeIcon" aria-hidden="true">🌙</span>
+        <span id="themeLabel">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Live banner: announces + displays whatever is currently being spoken -->
+  <div id="banner" role="status" aria-live="polite">
+    <span class="banner-icon" id="bannerIcon" aria-hidden="true">💬</span>
+    <span id="bannerText" class="banner-idle">Tap a card to speak</span>
+  </div>
+
+  <nav role="tablist" aria-label="Phrase categories">
+    <button class="tab" role="tab" id="tab-medical" aria-selected="true" aria-controls="panel-medical" type="button">
+      <span class="tab-icon" aria-hidden="true">🏥</span><span>Medical</span>
+    </button>
+    <button class="tab" role="tab" id="tab-family" aria-selected="false" aria-controls="panel-family" tabindex="-1" type="button">
+      <span class="tab-icon" aria-hidden="true">👨‍👩‍👧</span><span>Family</span>
+    </button>
+    <button class="tab" role="tab" id="tab-general" aria-selected="false" aria-controls="panel-general" tabindex="-1" type="button">
+      <span class="tab-icon" aria-hidden="true">💬</span><span>General</span>
+    </button>
+    <button class="tab" role="tab" id="tab-custom" aria-selected="false" aria-controls="panel-custom" tabindex="-1" type="button">
+      <span class="tab-icon" aria-hidden="true">✏️</span><span>Custom</span>
+    </button>
+  </nav>
+
+  <main>
+    <section id="panel-medical" role="tabpanel" aria-labelledby="tab-medical">
+      <div class="grid" data-category="medical"></div>
+    </section>
+
+    <section id="panel-family" role="tabpanel" aria-labelledby="tab-family" hidden>
+      <div class="grid" data-category="family"></div>
+    </section>
+
+    <section id="panel-general" role="tabpanel" aria-labelledby="tab-general" hidden>
+      <div class="grid" data-category="general"></div>
+    </section>
+
+    <section id="panel-custom" role="tabpanel" aria-labelledby="tab-custom" hidden>
+      <div class="custom-panel">
+        <label for="customText">Type any message, then press Speak:</label>
+        <textarea id="customText" placeholder="Type here…"
+                  autocomplete="off" autocapitalize="sentences"></textarea>
+        <button id="speakCustomBtn" type="button">
+          <span aria-hidden="true">🔊</span> SPEAK
+        </button>
+        <button id="clearCustomBtn" class="quick-clear" type="button">
+          🧹 Clear text
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <div class="controls">
+    <div class="controls-inner">
+      <div class="control-group">
+        <label for="volumeSlider">
+          <span>🔊 Volume</span>
+          <span class="control-value" id="volumeValue">100%</span>
+        </label>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="1"
+               aria-label="Speech volume">
+      </div>
+      <div class="control-group">
+        <label for="rateSlider">
+          <span>🐢 Speed 🐇</span>
+          <span class="control-value" id="rateValue">Normal</span>
+        </label>
+        <input type="range" id="rateSlider" min="0.5" max="1.5" step="0.05" value="0.9"
+               aria-label="Speech speed">
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     PHRASE DATA
+     ============================================================ */
+  var PHRASES = {
+    medical: [
+      { icon: "😣", text: "I am in pain" },
+      { icon: "💊", text: "I need medicine" },
+      { icon: "🛎️", text: "Call the nurse" },
+      { icon: "🥶", text: "I am cold" },
+      { icon: "🥵", text: "I am warm" },
+      { icon: "🔄", text: "I need help turning" },
+      { icon: "🤢", text: "I feel nauseous" },
+      { icon: "😮‍💨", text: "I am having trouble breathing" },
+      { icon: "😵", text: "I feel dizzy" },
+      { icon: "🛏️", text: "Please adjust my bed" },
+      { icon: "🩹", text: "Something hurts here" },
+      { icon: "🚨", text: "This is an emergency" }
+    ],
+    family: [
+      { icon: "📞", text: "Call Marshall" },
+      { icon: "👨‍👩‍👧", text: "I want to talk to my family" },
+      { icon: "🙏", text: "Thank you" },
+      { icon: "❤️", text: "I love you" },
+      { icon: "🤗", text: "I miss you" },
+      { icon: "🚗", text: "When are you coming to visit?" },
+      { icon: "🙋", text: "Please stay with me" },
+      { icon: "😊", text: "I am okay, do not worry" },
+      { icon: "👋", text: "Goodbye, see you soon" },
+      { icon: "🖼️", text: "Show me pictures" }
+    ],
+    general: [
+      { icon: "✅", text: "Yes" },
+      { icon: "❌", text: "No" },
+      { icon: "🍽️", text: "I am hungry" },
+      { icon: "🥤", text: "I am thirsty" },
+      { icon: "🚻", text: "I need to use the restroom" },
+      { icon: "✋", text: "Please wait" },
+      { icon: "🙂", text: "Hello" },
+      { icon: "🙏", text: "Please" },
+      { icon: "😴", text: "I am tired" },
+      { icon: "📺", text: "Turn on the TV" },
+      { icon: "💡", text: "Turn the lights off" },
+      { icon: "🔁", text: "Please say that again" },
+      { icon: "❓", text: "I do not understand" },
+      { icon: "📝", text: "I want to write something" }
+    ]
+  };
+
+  var synth = window.speechSynthesis;
+  var banner = document.getElementById("banner");
+  var bannerText = document.getElementById("bannerText");
+  var bannerIcon = document.getElementById("bannerIcon");
+  var volumeSlider = document.getElementById("volumeSlider");
+  var rateSlider = document.getElementById("rateSlider");
+  var volumeValue = document.getElementById("volumeValue");
+  var rateValue = document.getElementById("rateValue");
+  var activeCard = null;
+  var preferredVoice = null;
+
+  if (!("speechSynthesis" in window)) {
+    document.getElementById("noTTS").style.display = "block";
+  }
+
+  /* ============================================================
+     VOICE SELECTION — prefer a local English voice when available.
+     Voices load asynchronously on Chrome/Android, so listen for
+     the voiceschanged event as well as trying immediately.
+     ============================================================ */
+  function pickVoice() {
+    if (!synth) return;
+    var voices = synth.getVoices();
+    if (!voices || !voices.length) return;
+    var english = voices.filter(function (v) { return /^en(-|_)/i.test(v.lang) || v.lang === "en"; });
+    var pool = english.length ? english : voices;
+    var local = pool.filter(function (v) { return v.localService; });
+    preferredVoice = (local[0] || pool[0]) || null;
+  }
+  pickVoice();
+  if (synth && typeof synth.addEventListener === "function") {
+    synth.addEventListener("voiceschanged", pickVoice);
+  }
+
+  /* ============================================================
+     SPEAK
+     ============================================================ */
+  function setBannerIdle() {
+    banner.classList.remove("speaking");
+    bannerText.textContent = "Tap a card to speak";
+    bannerText.classList.add("banner-idle");
+    bannerIcon.textContent = "💬";
+    if (activeCard) {
+      activeCard.classList.remove("is-speaking");
+      activeCard = null;
+    }
+  }
+
+  function speak(text, sourceCard) {
+    if (!synth || !text) return;
+
+    // Interrupt anything in progress so taps always respond instantly.
+    synth.cancel();
+    if (activeCard) activeCard.classList.remove("is-speaking");
+
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.volume = parseFloat(volumeSlider.value);
+    utterance.rate = parseFloat(rateSlider.value);
+    utterance.pitch = 1;
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    banner.classList.add("speaking");
+    bannerText.textContent = text;
+    bannerText.classList.remove("banner-idle");
+    bannerIcon.textContent = "🔊";
+    if (sourceCard) {
+      activeCard = sourceCard;
+      activeCard.classList.add("is-speaking");
+    }
+
+    utterance.onend = setBannerIdle;
+    utterance.onerror = setBannerIdle;
+
+    // Some Chrome builds ignore speak() called too soon after cancel();
+    // a zero-delay timeout makes interruption reliable everywhere.
+    window.setTimeout(function () { synth.speak(utterance); }, 0);
+  }
+
+  document.getElementById("stopBtn").addEventListener("click", function () {
+    if (synth) synth.cancel();
+    setBannerIdle();
+  });
+
+  /* ============================================================
+     BUILD PHRASE CARDS
+     ============================================================ */
+  Object.keys(PHRASES).forEach(function (category) {
+    var grid = document.querySelector('.grid[data-category="' + category + '"]');
+    PHRASES[category].forEach(function (phrase) {
+      var card = document.createElement("button");
+      card.type = "button";
+      card.className = "card";
+      card.setAttribute("aria-label", "Speak: " + phrase.text);
+
+      var icon = document.createElement("span");
+      icon.className = "card-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = phrase.icon;
+
+      var label = document.createElement("span");
+      label.textContent = phrase.text;
+
+      card.appendChild(icon);
+      card.appendChild(label);
+      card.addEventListener("click", function () { speak(phrase.text, card); });
+      grid.appendChild(card);
+    });
+  });
+
+  /* Immediate press feedback on touch/pen/mouse down, before click fires */
+  document.addEventListener("pointerdown", function (event) {
+    var pressable = event.target.closest(".card, .tab, .util-btn, #speakCustomBtn");
+    if (!pressable) return;
+    pressable.classList.add("pressed");
+    var release = function () {
+      pressable.classList.remove("pressed");
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+    };
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+  });
+
+  /* ============================================================
+     TABS (with arrow-key support for keyboard/switch users)
+     ============================================================ */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+
+  function selectTab(tab) {
+    tabs.forEach(function (t) {
+      var selected = t === tab;
+      t.setAttribute("aria-selected", selected ? "true" : "false");
+      t.tabIndex = selected ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !selected;
+    });
+  }
+
+  tabs.forEach(function (tab, index) {
+    tab.addEventListener("click", function () { selectTab(tab); });
+    tab.addEventListener("keydown", function (event) {
+      var next = null;
+      if (event.key === "ArrowRight") next = tabs[(index + 1) % tabs.length];
+      if (event.key === "ArrowLeft") next = tabs[(index - 1 + tabs.length) % tabs.length];
+      if (next) {
+        event.preventDefault();
+        next.focus();
+        selectTab(next);
+      }
+    });
+  });
+
+  /* ============================================================
+     CUSTOM MESSAGE
+     ============================================================ */
+  var customText = document.getElementById("customText");
+
+  document.getElementById("speakCustomBtn").addEventListener("click", function () {
+    var text = customText.value.trim();
+    if (text) speak(text, null);
+  });
+
+  document.getElementById("clearCustomBtn").addEventListener("click", function () {
+    customText.value = "";
+    customText.focus();
+  });
+
+  customText.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      var text = customText.value.trim();
+      if (text) speak(text, null);
+    }
+  });
+
+  /* ============================================================
+     SLIDERS — live labels + persistence
+     ============================================================ */
+  function describeRate(rate) {
+    if (rate < 0.75) return "Slow";
+    if (rate < 1.05) return "Normal";
+    if (rate < 1.3) return "Fast";
+    return "Very fast";
+  }
+
+  function updateSliderLabels() {
+    volumeValue.textContent = Math.round(parseFloat(volumeSlider.value) * 100) + "%";
+    rateValue.textContent = describeRate(parseFloat(rateSlider.value));
+  }
+
+  function saveSetting(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) { /* private mode: ignore */ }
+  }
+  function loadSetting(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  var savedVolume = loadSetting("aac-volume");
+  var savedRate = loadSetting("aac-rate");
+  if (savedVolume !== null) volumeSlider.value = savedVolume;
+  if (savedRate !== null) rateSlider.value = savedRate;
+  updateSliderLabels();
+
+  volumeSlider.addEventListener("input", function () {
+    updateSliderLabels();
+    saveSetting("aac-volume", volumeSlider.value);
+  });
+  rateSlider.addEventListener("input", function () {
+    updateSliderLabels();
+    saveSetting("aac-rate", rateSlider.value);
+  });
+
+  /* ============================================================
+     HIGH-CONTRAST / DARK MODE TOGGLE (persisted)
+     ============================================================ */
+  var themeBtn = document.getElementById("themeBtn");
+  var themeIcon = document.getElementById("themeIcon");
+  var themeLabel = document.getElementById("themeLabel");
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    var dark = theme === "dark";
+    themeIcon.textContent = dark ? "☀️" : "🌙";
+    themeLabel.textContent = dark ? "Light" : "Dark";
+    themeBtn.setAttribute("aria-pressed", dark ? "true" : "false");
+    themeBtn.setAttribute("aria-label",
+      dark ? "Switch to light mode" : "Switch to high contrast dark mode");
+    saveSetting("aac-theme", theme);
+  }
+
+  var savedTheme = loadSetting("aac-theme");
+  if (savedTheme === "dark" || savedTheme === "light") {
+    applyTheme(savedTheme);
+  } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    applyTheme("dark");
+  }
+
+  themeBtn.addEventListener("click", function () {
+    var current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    applyTheme(current === "dark" ? "light" : "dark");
+  });
+
+  /* Stop speech cleanly if the page is closed or backgrounded mid-utterance */
+  window.addEventListener("pagehide", function () {
+    if (synth) synth.cancel();
+  });
+})();
+</script>
+</body>
+</html>
