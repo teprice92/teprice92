@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en" data-theme="slate">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Timeblock — ADHD month planner</title>
+<meta name="description" content="A month planner built around timed blocks, externalised time, and immediate rewards.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Atkinson Hyperlegible is a nicety, not a dependency: loaded non-blocking so the
+     app paints instantly offline or behind a network filter, falling back to the
+     system stack declared in styles.css. -->
+<link rel="stylesheet" media="print" onload="this.media='all';this.onload=null"
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap"></noscript>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">◴</span>
+    <span class="brand-name">Timeblock</span>
+  </div>
+
+  <div class="progress-cluster" id="progressCluster">
+    <div class="level-chip" id="levelChip" title="Level">Lv 1</div>
+    <div class="xpbar" role="progressbar" aria-label="Progress to next level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <span class="xpbar-fill" id="xpFill"></span>
+    </div>
+    <div class="streak-chip" id="streakChip" title="Days with at least one finished block">🔥 0</div>
+  </div>
+
+  <div class="topbar-actions">
+    <button class="icon-btn" id="captureBtn" title="Quick capture (press C)" aria-label="Quick capture">✎</button>
+    <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙</button>
+  </div>
+</header>
+
+<div class="nowbar" id="nowbar" hidden>
+  <div class="nowbar-ring" id="nowbarRing" aria-hidden="true"><span id="nowbarRingInner"></span></div>
+  <div class="nowbar-text">
+    <strong id="nowbarTitle">—</strong>
+    <span id="nowbarSub" class="muted"></span>
+  </div>
+  <button class="btn btn-quiet" id="nowbarJump">Open</button>
+</div>
+
+<main id="main">
+  <section class="view" id="view-now" data-view="now"></section>
+  <section class="view" id="view-day" data-view="day" hidden></section>
+  <section class="view" id="view-month" data-view="month" hidden></section>
+  <section class="view" id="view-rewards" data-view="rewards" hidden></section>
+  <section class="view" id="view-why" data-view="why" hidden></section>
+</main>
+
+<nav class="tabbar" aria-label="Main">
+  <button class="tab is-active" data-goto="now"><span aria-hidden="true">◉</span>Now</button>
+  <button class="tab" data-goto="day"><span aria-hidden="true">▤</span>Day</button>
+  <button class="tab" data-goto="month"><span aria-hidden="true">▦</span>Month</button>
+  <button class="tab" data-goto="rewards"><span aria-hidden="true">★</span>Rewards</button>
+  <button class="tab" data-goto="why"><span aria-hidden="true">◇</span>Why</button>
+</nav>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<dialog class="sheet" id="blockSheet">
+  <form method="dialog" id="blockForm">
+    <div class="sheet-head">
+      <h2 id="sheetTitle">New block</h2>
+      <button class="icon-btn" value="cancel" aria-label="Close">✕</button>
+    </div>
+
+    <label class="field">
+      <span class="field-label">What is it?</span>
+      <input id="f_title" name="title" placeholder="e.g. Draft the invoice email" autocomplete="off" required>
+    </label>
+
+    <div class="field">
+      <span class="field-label">Kind</span>
+      <div class="chiprow" id="f_type" role="radiogroup" aria-label="Block kind"></div>
+    </div>
+
+    <div class="field-row">
+      <label class="field">
+        <span class="field-label">Day</span>
+        <input id="f_date" name="date" type="date" required>
+      </label>
+      <label class="field">
+        <span class="field-label">Starts</span>
+        <input id="f_start" name="start" type="time" step="300" required>
+      </label>
+    </div>
+
+    <div class="field">
+      <span class="field-label">For how long</span>
+      <div class="chiprow" id="f_dur" role="radiogroup" aria-label="Duration"></div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">
+        Cue → action
+        <em class="hint">The single highest-leverage field. Fill it in.</em>
+      </span>
+      <div class="intention">
+        <span class="intention-lead">When</span>
+        <input id="f_cue" name="cue" placeholder="I sit down with coffee" autocomplete="off">
+        <span class="intention-lead">I will</span>
+        <input id="f_action" name="action" placeholder="open the doc and write one line" autocomplete="off">
+      </div>
+    </div>
+
+    <label class="field">
+      <span class="field-label">First tiny move <em class="hint">Small enough to be embarrassing</em></span>
+      <input id="f_first" name="first" placeholder="e.g. open laptop" autocomplete="off">
+    </label>
+
+    <details class="more">
+      <summary>More</summary>
+      <div class="field-row">
+        <label class="field">
+          <span class="field-label">Priority</span>
+          <select id="f_priority">
+            <option value="A">A — today or it hurts</option>
+            <option value="B" selected>B — matters, can move</option>
+            <option value="C">C — nice if it happens</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Energy needed</span>
+          <select id="f_energy">
+            <option value="low">Low</option>
+            <option value="med" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+      </div>
+      <label class="field">
+        <span class="field-label">Part of which anchor?</span>
+        <select id="f_goal"><option value="">— none —</option></select>
+      </label>
+      <label class="field">
+        <span class="field-label">Steps <em class="hint">One per line. Checking them off pays out immediately.</em></span>
+        <textarea id="f_steps" rows="3" placeholder="find the file&#10;write the first line&#10;send it"></textarea>
+      </label>
+      <label class="field">
+        <span class="field-label">Repeat</span>
+        <select id="f_repeat">
+          <option value="">Just once</option>
+          <option value="daily">Every day this month</option>
+          <option value="weekdays">Weekdays this month</option>
+          <option value="weekly">Same weekday, rest of month</option>
+        </select>
+      </label>
+    </details>
+
+    <div class="sheet-foot">
+      <button type="button" class="btn btn-danger-quiet" id="deleteBlock" hidden>Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-quiet" id="cancelBlock">Cancel</button>
+      <button type="button" class="btn btn-primary" id="saveBlock">Save block</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="captureSheet">
+  <div class="sheet-head">
+    <h2>Park it</h2>
+    <button class="icon-btn" id="captureClose" aria-label="Close">✕</button>
+  </div>
+  <p class="muted small">Whatever just hijacked your attention goes here. It is not lost. Get back to the block.</p>
+  <form id="captureForm">
+    <input id="captureInput" placeholder="Type it and hit enter" autocomplete="off">
+  </form>
+  <ul class="inbox-list" id="inboxList"></ul>
+</dialog>
+
+<dialog class="sheet" id="settingsSheet">
+  <div class="sheet-head">
+    <h2>Settings</h2>
+    <button class="icon-btn" id="settingsClose" aria-label="Close">✕</button>
+  </div>
+  <div id="settingsBody"></div>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
