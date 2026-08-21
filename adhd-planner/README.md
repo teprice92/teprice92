@@ -17,8 +17,13 @@ Opening `index.html` directly from disk mostly works, but some browsers refuse
 `localStorage` on `file://` URLs and your data will vanish on reload. Serve it over HTTP,
 or install it to your home screen from a hosted copy.
 
-Run `node build.js` to inline everything into `dist/timeblock.html` — a single portable
-file you can email to yourself, drop on any static host, or open from a USB stick.
+Run `node build.js` to produce two bundles:
+
+- `dist/timeblock.html` — the whole app inlined into one portable file you can email to
+  yourself, drop on any static host, or open from a USB stick.
+- `dist/timeblock.fragment.html` — the same page without the document wrapper, for hosts
+  that supply their own (Claude Artifacts among them). This build omits the file-download
+  path, since embedded viewers cannot save files; **Copy backup** works everywhere.
 
 ## What it does
 
@@ -60,7 +65,7 @@ index.html   markup and the three dialogs
 styles.css   design tokens + eight themes
 app.js       state, scheduling, XP, achievements, rendering
 why.md       the research this is built on, with citations
-build.js     inlines the above into dist/timeblock.html
+build.js     inlines the above into dist/ (standalone + embeddable fragment)
 ```
 
 ## What this is not

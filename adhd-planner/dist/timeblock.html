@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>Timeblock — ADHD month planner</title>
+<title>Timeblock</title>
 <meta name="description" content="A month planner built around timed blocks, externalised time, and immediate rewards.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -640,6 +640,12 @@ const THEMES = [
 
 /* ── State ──────────────────────────────────────────────────────────────── */
 const KEY = 'timeblock.v1';
+const prefersDark = () => {
+  try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; }
+};
+/* Script-driven downloads are blocked inside embedded viewers, so the download
+ * button is only offered where it can actually do something. Copying always works. */
+const CAN_DOWNLOAD = (() => { try { return window.self === window.top; } catch (e) { return false; } })();
 const defaults = () => ({
   v: 1,
   blocks: {},           // id -> block
@@ -650,7 +656,7 @@ const defaults = () => ({
   ach: {},              // id -> ts
   active: null,         // {id, startedAt, accumulated, paused}
   settings: {
-    theme:'slate', clock:12, dayStart:7, dayEnd:22, buffer:10,
+    theme: prefersDark() ? 'dusk' : 'slate', clock:12, dayStart:7, dayEnd:22, buffer:10,
     chime:true, motion:'auto', step:1, wrapWarn:5, onboarded:false,
   },
   ui: { date: todayISO(), month: todayISO().slice(0, 7), view:'now' },
@@ -1538,7 +1544,7 @@ function renderSettings() {
       Export a copy before you clear site data or switch devices.</span></label>
       <div class="btn-row" style="margin-top:10px">
         <button class="btn" data-act="export-copy">Copy backup</button>
-        <button class="btn" data-act="export-file">Download backup</button>
+        ${CAN_DOWNLOAD ? '<button class="btn" data-act="export-file">Download backup</button>' : ''}
         <button class="btn" data-act="import">Restore</button>
       </div>
       <button class="btn btn-danger-quiet" data-act="wipe" style="margin-top:8px">Erase everything</button>
