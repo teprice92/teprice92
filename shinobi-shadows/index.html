@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shinobi Shadows</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js" } }
+  </script>
+</head>
+<body>
+  <div id="game"></div>
+
+  <!-- ===== In-game HUD ===== -->
+  <div id="hud" class="hidden">
+    <div id="hud-status">
+      <div id="hud-portrait"><span id="hud-kanji">風</span></div>
+      <div id="hud-bars">
+        <div id="hud-name">Hayate</div>
+        <div class="bar"><div id="hp-fill" class="fill hp"></div><span class="bar-label">HP</span></div>
+        <div class="bar"><div id="ck-fill" class="fill ck"></div><span class="bar-label">CHAKRA</span></div>
+      </div>
+    </div>
+
+    <div id="hud-objective"></div>
+
+    <div id="ki">
+      <div id="ki-ring"><span id="ki-value">0</span></div>
+      <div id="ki-label">KI</div>
+      <div id="light-indicator" title="How visible you are">●</div>
+    </div>
+
+    <div id="crosshair"></div>
+    <div id="prompt"></div>
+    <div id="center-flash"></div>
+    <div id="msg-log"></div>
+    <div id="damage-vignette"></div>
+
+    <div id="hud-bottom">
+      <div id="items">
+        <div class="item"><span class="key">Q</span> Kunai <b id="kunai-count">10</b></div>
+        <div class="item"><span class="key">G</span> Smoke <b id="smoke-count">3</b></div>
+        <div class="item"><span class="key">H</span> Pill <b id="pill-count">2</b></div>
+      </div>
+      <div id="jutsu-slots"></div>
+    </div>
+  </div>
+
+  <!-- ===== Menus ===== -->
+  <div id="screen-title" class="screen">
+    <div class="title-wrap">
+      <div class="title-kanji">影の道</div>
+      <h1>SHINOBI SHADOWS</h1>
+      <p class="subtitle">A stealth-action shinobi tale</p>
+      <button id="btn-start" class="btn">Begin</button>
+      <p class="hint">Best with mouse &amp; keyboard on desktop</p>
+    </div>
+  </div>
+
+  <div id="screen-select" class="screen hidden">
+    <h2>Choose Your Shinobi</h2>
+    <div id="char-cards"></div>
+  </div>
+
+  <div id="screen-briefing" class="screen hidden">
+    <div class="panel">
+      <h2>Mission: The Iron Lord</h2>
+      <p>Lord <b>Gōzan</b> has hired rogue samurai to seize the valley. He hides in the
+        inner garden behind his keep, guarded by elite swordsmen and archers on the watchtowers.</p>
+      <p><b>Objective:</b> Infiltrate the compound and assassinate Lord Gōzan.</p>
+      <p class="muted">A true shinobi is never seen. Stay in the shadows, strike from behind,
+        hide the evidence of your passing. Lanterns give you away.</p>
+      <div class="controls-grid">
+        <div><span class="key">WASD</span> Move</div>
+        <div><span class="key">Mouse</span> Look</div>
+        <div><span class="key">Shift</span> Shinobi sprint</div>
+        <div><span class="key">Space</span> Jump / double jump</div>
+        <div><span class="key">Shift</span> into a wall: run up it</div>
+        <div><span class="key">C</span> Crouch (quiet)</div>
+        <div><span class="key">LMB</span> Strike / 忍殺 stealth kill</div>
+        <div><span class="key">RMB / F</span> Grappling hook</div>
+        <div><span class="key">1 2 3</span> Jutsu</div>
+        <div><span class="key">Q</span> Throw kunai</div>
+        <div><span class="key">G</span> Smoke bomb</div>
+        <div><span class="key">H</span> Soldier pill</div>
+        <div><span class="key">Arrows</span> Turn the camera (if mouse lock is off)</div>
+        <div><span class="key">Esc</span> Pause</div>
+      </div>
+      <button id="btn-deploy" class="btn">Deploy</button>
+    </div>
+  </div>
+
+  <div id="screen-pause" class="screen hidden">
+    <div class="panel small">
+      <h2>Paused</h2>
+      <button id="btn-resume" class="btn">Resume</button>
+      <button id="btn-quit" class="btn ghost">Abandon Mission</button>
+    </div>
+  </div>
+
+  <div id="screen-result" class="screen hidden">
+    <div class="panel">
+      <h2 id="result-title">Mission Complete</h2>
+      <div id="result-rank"></div>
+      <table id="result-stats"></table>
+      <button id="btn-again" class="btn">Play Again</button>
+      <button id="btn-menu" class="btn ghost">Change Shinobi</button>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
