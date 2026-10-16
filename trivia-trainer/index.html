@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trivia Night Trainer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <button class="brand" id="brand" type="button" aria-label="Back to setup">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">Trivia Night<br>Trainer</span>
+    </button>
+    <p class="masthead-tag" id="masthead-tag">Practice rounds for quiz night</p>
+  </header>
+
+  <!-- SETUP -->
+  <main id="home" class="screen">
+    <section class="panel setup" aria-labelledby="setup-h">
+      <h1 id="setup-h" class="eyebrow">Build a round</h1>
+
+      <fieldset class="field">
+        <legend>Categories <button type="button" class="link" id="cats-toggle">Select none</button></legend>
+        <div class="cat-grid" id="cat-grid"></div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend>Difficulty</legend>
+        <div class="seg" id="seg-diff" role="radiogroup"></div>
+      </fieldset>
+
+      <div class="field-row">
+        <fieldset class="field">
+          <legend>Questions</legend>
+          <div class="seg" id="seg-len" role="radiogroup"></div>
+        </fieldset>
+        <fieldset class="field">
+          <legend>Timer</legend>
+          <div class="seg" id="seg-timer" role="radiogroup"></div>
+        </fieldset>
+      </div>
+
+      <fieldset class="field">
+        <legend>Format</legend>
+        <div class="seg seg-wide" id="seg-mode" role="radiogroup"></div>
+        <p class="hint" id="mode-hint"></p>
+      </fieldset>
+
+      <div class="start-row">
+        <button class="btn btn-primary" id="start" type="button">Start round</button>
+        <button class="btn" id="drill" type="button">Drill my misses</button>
+      </div>
+      <p class="hint" id="pool-count"></p>
+    </section>
+
+    <section class="panel wheel-panel" aria-labelledby="wheel-h">
+      <h2 id="wheel-h" class="eyebrow">Your wheel</h2>
+      <div class="wheel-wrap">
+        <div id="wheel" class="wheel"></div>
+        <ul class="cat-stats" id="cat-stats"></ul>
+      </div>
+      <dl class="tally" id="tally"></dl>
+      <div class="reset-row">
+        <button class="link" id="reset" type="button">Reset my stats</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- PLAY -->
+  <main id="play" class="screen" hidden>
+    <section class="panel card" aria-live="polite">
+      <div class="card-top">
+        <span class="cat-chip" id="q-cat"></span>
+        <span class="q-meta" id="q-meta"></span>
+      </div>
+      <div class="timer" id="timer" hidden><div class="timer-fill" id="timer-fill"></div></div>
+      <h2 class="question" id="q-text"></h2>
+      <ol class="options" id="options"></ol>
+      <div class="reveal" id="reveal" hidden>
+        <p class="reveal-label">Answer</p>
+        <p class="reveal-answer" id="reveal-answer"></p>
+      </div>
+      <p class="note" id="note" hidden></p>
+      <div class="card-actions" id="card-actions"></div>
+    </section>
+    <div class="play-foot">
+      <button class="link" id="quit" type="button">End round</button>
+      <span class="keys" id="keys"></span>
+    </div>
+  </main>
+
+  <!-- RESULTS -->
+  <main id="results" class="screen" hidden>
+    <section class="panel score-sheet">
+      <p class="eyebrow">Final score</p>
+      <p class="big-score" id="big-score"></p>
+      <p class="verdict" id="verdict"></p>
+      <ul class="breakdown" id="breakdown"></ul>
+      <div class="start-row">
+        <button class="btn btn-primary" id="again" type="button">Play another round</button>
+        <button class="btn" id="redo-misses" type="button">Retry these misses</button>
+        <button class="btn" id="home-btn" type="button">Change setup</button>
+      </div>
+    </section>
+    <section class="panel" id="review-panel">
+      <h2 class="eyebrow">Answer key</h2>
+      <ol class="review" id="review"></ol>
+    </section>
+  </main>
+</div>
+<script src="questions.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
