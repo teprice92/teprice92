@@ -20,7 +20,7 @@
   --bad: #cc2f37;
   --bad-soft: #fbe0e1;
   --focus: #2f6fe0;
-  --glass: rgba(255, 255, 255, 0.78);
+  --glass: rgba(250, 251, 253, 0.96);
 
   /* Category colours are vivid in both themes; text on them is always --on-cat. */
   --c-pop: #ff5fa2;
@@ -46,7 +46,7 @@
     --bg: #0a0c16; --bg-2: #121628; --surface: #151a2c; --ink: #eef1f8; --muted: #9aa3bd; --line: #262d45;
     --btn: #fff4d6; --btn-ink: #0a0c16; --bulb: #ffbe3b; --bulb-dim: #4a4130; --sign: #12162a; --sign-ink: #fff4d6;
     --ticker: #fff4d6; --ticker-ink: #0a0c16; --good: #43d184; --good-soft: #10331f; --bad: #ff6b72; --bad-soft: #3a161b;
-    --focus: #7aa8ff; --glass: rgba(16, 20, 36, 0.8);
+    --focus: #7aa8ff; --glass: rgba(14, 17, 31, 0.96);
     color-scheme: dark;
   }
 }
@@ -54,7 +54,7 @@
   --bg: #0a0c16; --bg-2: #121628; --surface: #151a2c; --ink: #eef1f8; --muted: #9aa3bd; --line: #262d45;
   --btn: #fff4d6; --btn-ink: #0a0c16; --bulb: #ffbe3b; --bulb-dim: #4a4130; --sign: #12162a; --sign-ink: #fff4d6;
   --ticker: #fff4d6; --ticker-ink: #0a0c16; --good: #43d184; --good-soft: #10331f; --bad: #ff6b72; --bad-soft: #3a161b;
-  --focus: #7aa8ff; --glass: rgba(16, 20, 36, 0.8);
+  --focus: #7aa8ff; --glass: rgba(14, 17, 31, 0.96);
   color-scheme: dark;
 }
 
@@ -66,8 +66,9 @@ body {
   color: var(--ink);
   font: 16px/1.55 var(--f-body);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
+html { overflow-x: clip; }
 body::before {
   content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--glass);
 }
@@ -97,7 +98,7 @@ a { color: inherit; }
 /* ---------- Top bar ---------- */
 .topbar {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
-  background: var(--glass); backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  background: var(--glass);
   border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
 }
 .topbar-inner {
@@ -158,7 +159,7 @@ a { color: inherit; }
   margin: 0; font-family: var(--f-display); font-weight: 800; letter-spacing: -0.035em; line-height: 0.98;
   font-size: clamp(2.6rem, 7.4vw, 5.6rem); font-variation-settings: "wdth" 80, "opsz" 96; text-wrap: balance;
 }
-.rotator { display: inline-block; vertical-align: bottom; overflow: hidden; padding-bottom: 0.08em; margin-bottom: -0.08em; }
+.rotator { display: block; overflow: hidden; white-space: nowrap; padding-bottom: 0.1em; margin-bottom: -0.1em; contain: layout paint; }
 .rot-word {
   display: inline-block; color: var(--rot, var(--c-pop));
   -webkit-text-stroke: 0; text-decoration: underline; text-decoration-thickness: 0.07em; text-underline-offset: 0.12em;
@@ -203,15 +204,14 @@ a { color: inherit; }
 }
 .sec-sub { margin: 4px 0 0; color: var(--muted); max-width: 56ch; }
 
-/* Scroll-linked entrances, Apple style. Elements are fully visible without support. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .reveal-on-scroll {
-      animation: rise linear both; animation-timeline: view(); animation-range: entry 0% cover 28%;
-    }
-    @keyframes rise { from { opacity: 0.35; transform: translateY(48px) scale(0.97); } to { opacity: 1; transform: none; } }
-  }
+/* Entrances: content below the fold starts slightly lowered and rises once when it
+   scrolls into view. Nothing is hidden without JavaScript, and it runs one time only. */
+@media (prefers-reduced-motion: no-preference) {
+  .rise { transition: translate 0.8s var(--ease), opacity 0.8s var(--ease); transition-delay: var(--rd, 0ms); }
+  .rise.pending { translate: 0 40px; opacity: 0.25; }
 }
+/* Looping decorations stop while they're off screen. */
+.offscreen, .offscreen *, .offscreen::before, .offscreen::after { animation-play-state: paused !important; }
 
 /* ---------- Deck (category mosaic) ---------- */
 .deck {
@@ -232,7 +232,8 @@ a { color: inherit; }
   background: var(--surface); color: var(--ink);
   border: 2px dashed var(--line);
   transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(var(--lift)) rotate(var(--tilt, 0deg));
-  transition: transform 0.45s var(--spring), background-color 0.3s var(--ease), border-color 0.3s;
+  transition: transform 0.45s var(--spring), background-color 0.3s var(--ease), border-color 0.3s,
+    translate 0.8s var(--ease) var(--rd, 0ms), opacity 0.8s var(--ease) var(--rd, 0ms);
 }
 .tile[aria-pressed="true"] { --teaser: var(--on-cat); background: var(--cat); color: var(--on-cat); border: 2px solid var(--cat); }
 .tile[aria-pressed="true"] .tile-teaser { opacity: 0.28; }
@@ -325,7 +326,7 @@ a { color: inherit; }
 .dock-inner {
   pointer-events: auto; max-width: 860px; margin-inline: auto; display: flex; align-items: center; justify-content: space-between;
   gap: 12px 18px; flex-wrap: wrap; padding: 10px 10px 10px 22px; border-radius: 999px;
-  background: var(--glass); backdrop-filter: saturate(1.6) blur(18px); -webkit-backdrop-filter: saturate(1.6) blur(18px);
+  background: var(--glass);
   border: 1px solid var(--line); box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.45);
 }
 .dock-summary { margin: 0; font-size: 0.92rem; font-weight: 600; min-width: 0; }

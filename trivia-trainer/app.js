@@ -10,10 +10,11 @@
   const LETTERS = ["A", "B", "C", "D"];
   // A real answer from each category, shown huge on its card.
   const TEASERS = { pop: "Wakanda", music: "Thriller", history: "1492", geo: "0°", sci: "Au", sports: "147", random: "88" };
+  // Kept short so each fits on one line at phone width; the headline never reflows.
   const ROTATOR = [
-    ["ancient Rome", "history"], ["90s sitcoms", "pop"], ["the periodic table", "sci"], ["ABBA", "music"],
+    ["ancient Rome", "history"], ["90s sitcoms", "pop"], ["the elements", "sci"], ["ABBA", "music"],
     ["world capitals", "geo"], ["snooker", "sports"], ["Q-tips", "random"], ["Pixar", "pop"],
-    ["the Magna Carta", "history"], ["octopus hearts", "sci"], ["Prince", "music"], ["the Bosphorus", "geo"],
+    ["Magna Carta", "history"], ["octopuses", "sci"], ["Prince", "music"], ["the Bosphorus", "geo"],
   ];
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -140,7 +141,7 @@
       const n = QUESTIONS.filter((q) => q.c === c.id).length;
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "tile reveal-on-scroll";
+      b.className = "tile";
       b.dataset.cat = c.id;
       b.style.setProperty("--cat", catVar(c.id));
       b.innerHTML = `
@@ -214,7 +215,11 @@
   }
 
   // The wheel: one slice per category; its length shows your accuracy there.
+  let wheelKey = "";
   function renderWheel() {
+    const key = JSON.stringify([stats.cats, stats.rounds, stats.bestStreak]);
+    if (key === wheelKey) return;
+    wheelKey = key;
     const cx = 100, cy = 100, R = 96, hub = 30;
     const step = (Math.PI * 2) / CATS.length;
     let slices = "";
@@ -280,6 +285,7 @@
         ctx.restore();
       }
       raf = parts.length ? requestAnimationFrame(frame) : null;
+      if (!raf) { canvas.width = 0; canvas.height = 0; }
     }
     return function burst(x, y, count = 60, spread = 1) {
       if (reduceMotion) return;
@@ -968,8 +974,28 @@
     }
   });
 
-  // Section headers and panels rise in as you scroll (CSS handles it where supported).
-  document.querySelectorAll(".sec-head, .rules, .wheel-layout").forEach((el) => el.classList.add("reveal-on-scroll"));
+  // Below-the-fold sections rise in once as they're reached; looping decorations pause off screen.
+  function setupScrollEffects() {
+    if (!("IntersectionObserver" in window)) return;
+    if (!reduceMotion) {
+      const items = document.querySelectorAll(".sec-head, .tile, .listen-grid, .rules, .wheel-layout");
+      const rise = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) { e.target.classList.remove("pending"); rise.unobserve(e.target); }
+        }
+      }, { rootMargin: "0px 0px -8% 0px" });
+      items.forEach((el, i) => {
+        if (el.getBoundingClientRect().top < innerHeight) return; // already visible: leave it alone
+        el.classList.add("rise", "pending");
+        if (el.classList.contains("tile")) el.style.setProperty("--rd", `${(i % 4) * 60}ms`);
+        rise.observe(el);
+      });
+    }
+    const loops = new IntersectionObserver((entries) => {
+      for (const e of entries) e.target.classList.toggle("offscreen", !e.isIntersecting);
+    });
+    document.querySelectorAll(".sign, .ticker, .listen-stage").forEach((el) => loops.observe(el));
+  }
   const packDate = window.TRIVIA_PACKS && window.TRIVIA_PACKS.updated;
   if (PACK.some((q) => q.src === "opentdb")) {
     $("pack-credit").innerHTML = `Extra questions from <a href="https://opentdb.com" target="_blank" rel="noopener">Open Trivia DB</a> (CC BY-SA 4.0)${packDate ? `, last refreshed ${esc(packDate)}` : ""}.`;
@@ -979,5 +1005,6 @@
   renderTicker();
   renderSetup();
   startRotator();
+  setupScrollEffects();
   initClips();
 })();
