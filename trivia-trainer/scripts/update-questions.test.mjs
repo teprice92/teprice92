@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fromOpenTdb, idFor, mergeIntoPack, renderPackFile, validate } from "./update-questions.mjs";
+import { fromOpenTdb, fromSubmitted, idFor, mergeIntoPack, renderPackFile, validate } from "./update-questions.mjs";
 
 const sample = {
   type: "multiple",
@@ -48,4 +48,11 @@ test("rendered pack file defines window.TRIVIA_PACKS", async () => {
   const sandbox = { window: {} };
   vm.runInNewContext(renderPackFile([fromOpenTdb(sample, "22", "2026-10-16")], "2026-10-16"), sandbox);
   assert.equal(sandbox.window.TRIVIA_PACKS.questions.length, 1);
+});
+
+test("imported questions use the submit shape and pass validation", () => {
+  const q = fromSubmitted({ category: "music", difficulty: 1, question: "Which band recorded Abbey Road?", answer: "The Beatles", wrong_answers: ["The Kinks", "The Who", "Queen"], note: "" }, "claude", "2026-10-16");
+  assert.deepEqual(validate(q), []);
+  assert.equal(q.src, "claude");
+  assert.ok(validate(fromSubmitted({ category: "music", difficulty: 1, question: "Too few wrong answers here?", answer: "A", wrong_answers: ["B"] }, "claude", "x")).length);
 });

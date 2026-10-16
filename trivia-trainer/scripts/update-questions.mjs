@@ -4,6 +4,10 @@
 //   node scripts/update-questions.mjs                 # Open Trivia DB only (free, no key)
 //   node scripts/update-questions.mjs --claude        # also ask Claude for current-events questions
 //   node scripts/update-questions.mjs --claude-only   # skip Open Trivia DB
+//   node scripts/update-questions.mjs --import new.json   # add questions from a file, no network
+//
+// --import takes a JSON array of {category, difficulty, question, answer, wrong_answers, note}
+// (the same shape Claude submits) and skips the online sources.
 //
 // --claude needs ANTHROPIC_API_KEY and `npm install` (for @anthropic-ai/sdk).
 // Every question is validated and de-duplicated against the core bank and earlier packs
@@ -208,17 +212,7 @@ When you're finished, call submit_questions once with the whole batch.`;
     if (response.stop_reason === "refusal") throw new Error("Claude declined the request");
     const submit = response.content.find((b) => b.type === "tool_use" && b.name === "submit_questions");
     if (submit) {
-      return submit.input.questions.map((x) => ({
-        id: idFor(x.question),
-        c: x.category,
-        d: x.difficulty,
-        q: x.question.trim(),
-        a: x.answer.trim(),
-        w: x.wrong_answers.map((w) => w.trim()),
-        n: x.note.trim(),
-        src: "claude",
-        added,
-      }));
+      return submit.input.questions.map((x) => fromSubmitted(x, "claude", added));
     }
     messages.push({ role: "assistant", content: response.content });
     if (response.stop_reason !== "pause_turn") {
@@ -229,20 +223,41 @@ When you're finished, call submit_questions once with the whole batch.`;
 }
 
 // ---------- main ----------
+export function fromSubmitted(x, src, added) {
+  return {
+    id: idFor(String(x.question || "")),
+    c: x.category,
+    d: x.difficulty,
+    q: String(x.question || "").trim(),
+    a: String(x.answer || "").trim(),
+    w: Array.isArray(x.wrong_answers) ? x.wrong_answers.map((w) => String(w).trim()) : [],
+    n: String(x.note || "").trim(),
+    src,
+    added,
+  };
+}
+
 async function main() {
-  const args = new Set(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  const args = new Set(argv);
+  const importFile = args.has("--import") ? argv[argv.indexOf("--import") + 1] : null;
   const added = new Date().toISOString().slice(0, 10);
   const core = await loadWindowVar(CORE_FILE, "TRIVIA_QUESTIONS");
   if (!core) throw new Error("Couldn't read questions.js");
   const existing = (await loadWindowVar(PACK_FILE, "TRIVIA_PACKS"))?.questions || [];
 
   const candidates = [];
-  if (!args.has("--claude-only")) {
+  if (importFile) {
+    const list = JSON.parse(await readFile(importFile, "utf8"));
+    if (!Array.isArray(list)) throw new Error("--import file must hold a JSON array");
+    candidates.push(...list.map((x) => fromSubmitted(x, "claude", added)));
+    console.log(`Import: read ${list.length}`);
+  } else if (!args.has("--claude-only")) {
     const fromTdb = await fetchOpenTdb(added);
     console.log(`Open Trivia DB: fetched ${fromTdb.length}`);
     candidates.push(...fromTdb);
   }
-  if (args.has("--claude") || args.has("--claude-only")) {
+  if (!importFile && (args.has("--claude") || args.has("--claude-only"))) {
     if (!process.env.ANTHROPIC_API_KEY) {
       console.warn("Skipping Claude: ANTHROPIC_API_KEY isn't set.");
     } else {
