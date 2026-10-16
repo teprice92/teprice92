@@ -7,78 +7,133 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Bungee&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="wrap">
-  <header class="masthead">
-    <button class="brand" id="brand" type="button" aria-label="Back to setup">
+<canvas id="confetti" class="confetti" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="brand" id="brand" type="button" aria-label="Trivia Night Trainer home">
       <span class="brand-mark" aria-hidden="true"></span>
-      <span class="brand-name">Trivia Night<br>Trainer</span>
+      <span class="brand-name">Trivia Night Trainer</span>
     </button>
-    <p class="masthead-tag" id="masthead-tag">Practice rounds for quiz night</p>
-  </header>
+    <nav class="topnav" id="topnav" aria-label="Sections">
+      <a href="#deck">Categories</a>
+      <a href="#rules">Rules</a>
+      <a href="#progress">Your wheel</a>
+    </nav>
+  </div>
+</header>
 
-  <!-- SETUP -->
-  <main id="home" class="screen">
-    <section class="panel setup" aria-labelledby="setup-h">
-      <h1 id="setup-h" class="eyebrow">Build a round</h1>
+<!-- HOME -->
+<main id="home" class="screen">
+  <section class="hero wrap">
+    <div class="sign" aria-hidden="true">
+      <span class="sign-text">Quiz<br>Night</span>
+    </div>
+    <div class="hero-copy">
+      <h1 class="hero-h">
+        Know more about
+        <span class="rotator"><span class="rot-word" id="rot-word">ancient Rome</span></span>
+        than anyone at the table.
+      </h1>
+      <p class="hero-sub" id="hero-sub">Practice rounds for pub quiz night, across pop culture, music, history, geography, science, sports and the random stuff that wins tiebreakers.</p>
+      <div class="hero-cta">
+        <button class="btn btn-big" id="quick" type="button">Quick 10-question round</button>
+        <a class="btn btn-ghost" href="#deck">Build your own</a>
+      </div>
+      <ul class="hero-stats" id="hero-stats"></ul>
+    </div>
+  </section>
 
-      <fieldset class="field">
-        <legend>Categories <button type="button" class="link" id="cats-toggle">Select none</button></legend>
-        <div class="cat-grid" id="cat-grid"></div>
+  <div class="ticker" aria-label="Facts from the question bank">
+    <div class="ticker-label">Did you know</div>
+    <div class="ticker-viewport"><div class="ticker-track" id="ticker"></div></div>
+  </div>
+
+  <section id="deck" class="section wrap">
+    <header class="sec-head">
+      <p class="eyebrow">Step 1</p>
+      <h2 class="sec-h">Pick your categories</h2>
+      <button class="link" id="cats-toggle" type="button">Select none</button>
+    </header>
+    <div class="deck" id="cat-grid"></div>
+  </section>
+
+  <section id="rules" class="section wrap">
+    <header class="sec-head">
+      <p class="eyebrow">Step 2</p>
+      <h2 class="sec-h">Set the rules</h2>
+    </header>
+    <div class="rules">
+      <fieldset class="rule rule-wide">
+        <legend>Format</legend>
+        <div class="seg seg-big" id="seg-mode" role="radiogroup"></div>
+        <p class="hint" id="mode-hint"></p>
       </fieldset>
-
-      <fieldset class="field">
+      <fieldset class="rule">
         <legend>Difficulty</legend>
         <div class="seg" id="seg-diff" role="radiogroup"></div>
       </fieldset>
-
-      <div class="field-row">
-        <fieldset class="field">
-          <legend>Questions</legend>
-          <div class="seg" id="seg-len" role="radiogroup"></div>
-        </fieldset>
-        <fieldset class="field">
-          <legend>Timer</legend>
-          <div class="seg" id="seg-timer" role="radiogroup"></div>
-        </fieldset>
-      </div>
-
-      <fieldset class="field">
-        <legend>Format</legend>
-        <div class="seg seg-wide" id="seg-mode" role="radiogroup"></div>
-        <p class="hint" id="mode-hint"></p>
+      <fieldset class="rule">
+        <legend>Questions</legend>
+        <div class="seg" id="seg-len" role="radiogroup"></div>
       </fieldset>
+      <fieldset class="rule" id="timer-rule">
+        <legend>Timer</legend>
+        <div class="seg" id="seg-timer" role="radiogroup"></div>
+      </fieldset>
+      <fieldset class="rule" id="fresh-rule" hidden>
+        <legend>Question pool</legend>
+        <div class="seg" id="seg-fresh" role="radiogroup"></div>
+      </fieldset>
+    </div>
+  </section>
 
-      <div class="start-row">
-        <button class="btn btn-primary" id="start" type="button">Start round</button>
-        <button class="btn" id="drill" type="button">Drill my misses</button>
-      </div>
-      <p class="hint" id="pool-count"></p>
-    </section>
-
-    <section class="panel wheel-panel" aria-labelledby="wheel-h">
-      <h2 id="wheel-h" class="eyebrow">Your wheel</h2>
-      <div class="wheel-wrap">
-        <div id="wheel" class="wheel"></div>
+  <section id="progress" class="section wrap">
+    <header class="sec-head">
+      <p class="eyebrow">Your progress</p>
+      <h2 class="sec-h">The wheel</h2>
+      <p class="sec-sub">Each slice grows as your accuracy in that category climbs. Fill the wheel and you're ready.</p>
+    </header>
+    <div class="wheel-layout">
+      <div id="wheel" class="wheel"></div>
+      <div class="wheel-side">
         <ul class="cat-stats" id="cat-stats"></ul>
-      </div>
-      <dl class="tally" id="tally"></dl>
-      <div class="reset-row">
+        <dl class="tally" id="tally"></dl>
         <button class="link" id="reset" type="button">Reset my stats</button>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
-  <!-- PLAY -->
-  <main id="play" class="screen" hidden>
-    <section class="panel card" aria-live="polite">
-      <div class="card-top">
-        <span class="cat-chip" id="q-cat"></span>
-        <span class="q-meta" id="q-meta"></span>
+  <footer class="foot wrap">
+    <p>Your stats are saved in this browser only. <span id="pack-credit"></span></p>
+  </footer>
+
+  <div class="dock" id="dock">
+    <div class="dock-inner">
+      <p class="dock-summary" id="dock-summary"></p>
+      <div class="dock-actions">
+        <button class="btn btn-ghost" id="drill" type="button">Drill misses</button>
+        <button class="btn btn-big" id="start" type="button">Start round</button>
       </div>
+    </div>
+  </div>
+</main>
+
+<!-- PLAY -->
+<main id="play" class="screen stage" hidden>
+  <div class="stage-bg" aria-hidden="true"><span class="ghost-num" id="ghost-num">01</span></div>
+  <div class="stage-inner wrap">
+    <div class="stage-top">
+      <span class="cat-chip" id="q-cat"></span>
+      <div class="streak" id="streak" aria-label="Current streak"></div>
+      <span class="q-meta" id="q-meta"></span>
+    </div>
+    <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+    <section class="card" id="card" aria-live="polite">
       <div class="timer" id="timer" hidden><div class="timer-fill" id="timer-fill"></div></div>
       <h2 class="question" id="q-text"></h2>
       <ol class="options" id="options"></ol>
@@ -93,28 +148,30 @@
       <button class="link" id="quit" type="button">End round</button>
       <span class="keys" id="keys"></span>
     </div>
-  </main>
+  </div>
+</main>
 
-  <!-- RESULTS -->
-  <main id="results" class="screen" hidden>
-    <section class="panel score-sheet">
-      <p class="eyebrow">Final score</p>
-      <p class="big-score" id="big-score"></p>
-      <p class="verdict" id="verdict"></p>
-      <ul class="breakdown" id="breakdown"></ul>
-      <div class="start-row">
-        <button class="btn btn-primary" id="again" type="button">Play another round</button>
-        <button class="btn" id="redo-misses" type="button">Retry these misses</button>
-        <button class="btn" id="home-btn" type="button">Change setup</button>
-      </div>
-    </section>
-    <section class="panel" id="review-panel">
-      <h2 class="eyebrow">Answer key</h2>
-      <ol class="review" id="review"></ol>
-    </section>
-  </main>
-</div>
+<!-- RESULTS -->
+<main id="results" class="screen" hidden>
+  <section class="results-hero wrap">
+    <p class="eyebrow">Final score</p>
+    <p class="big-score"><span id="score-num">0</span><span class="score-of" id="score-of">/10</span></p>
+    <p class="verdict" id="verdict"></p>
+    <ul class="breakdown" id="breakdown"></ul>
+    <div class="hero-cta">
+      <button class="btn btn-big" id="again" type="button">Play another round</button>
+      <button class="btn btn-ghost" id="redo-misses" type="button">Retry these misses</button>
+      <button class="btn btn-ghost" id="home-btn" type="button">Change setup</button>
+    </div>
+  </section>
+  <section class="section wrap">
+    <header class="sec-head"><p class="eyebrow">Answer key</p><h2 class="sec-h">How it went</h2></header>
+    <ol class="review" id="review"></ol>
+  </section>
+</main>
+
 <script src="questions.js"></script>
+<script src="data/packs.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

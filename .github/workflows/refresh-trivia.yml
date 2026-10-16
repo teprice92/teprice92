@@ -1,0 +1,39 @@
+name: Refresh trivia questions
+
+on:
+  schedule:
+    - cron: "17 9 * * 1" # Mondays 09:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: trivia-trainer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      # Open Trivia DB always runs. Claude's current-events batch runs only if the
+      # ANTHROPIC_API_KEY repository secret is set.
+      - run: node scripts/update-questions.mjs --claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Commit new questions
+        run: |
+          if git diff --quiet -- data/packs.js; then
+            echo "No new questions this week."
+            exit 0
+          fi
+          git config user.name "trivia-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/packs.js
+          git commit -m "Refresh trivia questions"
+          git push

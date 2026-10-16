@@ -1,0 +1,13 @@
+{
+  "name": "trivia-night-trainer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "update": "node scripts/update-questions.mjs",
+    "update:claude": "node scripts/update-questions.mjs --claude",
+    "test": "node --test scripts/update-questions.test.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0"
+  }
+}
