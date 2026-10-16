@@ -45,7 +45,8 @@
     try { localStorage.setItem(STORE_KEY, JSON.stringify(stats)); } catch (e) { /* ignore */ }
   }
   let stats = loadStats();
-  stats.missed = stats.missed.filter((id) => BY_ID[id]);
+  // Misses can include clip ids that load later, so only filter at use time.
+  const knownMisses = () => stats.missed.filter((id) => BY_ID[id]);
 
   const prefs = Object.assign(
     { cats: CATS.map((c) => c.id), diff: "any", len: 10, mode: "mc", timer: true, fresh: false },
@@ -198,12 +199,13 @@
     $("dock-summary").innerHTML = pool.length
       ? `${take} questions <span class="muted">· ${prefs.cats.length} of ${CATS.length} categories · ${diffLabel} · ${prefs.mode === "mc" ? "Multiple choice" : "Pub rules"}</span>`
       : `<span class="muted">No questions match. Pick at least one category.</span>`;
-    const m = stats.missed.length;
+    const m = knownMisses().length;
     $("drill").disabled = m === 0;
     $("drill").textContent = m ? `Drill ${m} misses` : "No misses yet";
 
     renderWheel();
     renderHero();
+    renderListen();
   }
 
   function persistPrefs() {
@@ -330,6 +332,7 @@
   }
 
   function show(screen) {
+    if (screen !== "play") stopClip();
     for (const id of ["home", "play", "results"]) $(id).hidden = id !== screen;
     $("topnav").hidden = screen !== "home";
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -361,9 +364,11 @@
     const q = round.qs[round.i];
     round.answered = false;
     round.revealed = false;
+    // Clips without three wrong answers are always played pub rules.
+    round.qMode = q.audio && q.w.length !== 3 ? "recall" : round.mode;
 
     $("play").style.setProperty("--cat", catVar(q.c));
-    $("q-cat").textContent = CAT[q.c].name + (isFresh(q) ? " · fresh" : "");
+    $("q-cat").textContent = q.audio ? (q.kind === "music" ? "Music clip" : "Movie clip") : CAT[q.c].name + (isFresh(q) ? " · fresh" : "");
     $("ghost-num").textContent = String(round.i + 1).padStart(2, "0");
     $("q-text").textContent = q.q;
     $("note").hidden = true;
@@ -371,10 +376,11 @@
     renderMeta();
     renderStreak();
     restartAnim($("card"), "enter");
+    setupPlayer(q);
 
     const opts = $("options");
     opts.innerHTML = "";
-    if (round.mode === "mc") {
+    if (round.qMode === "mc") {
       round.choices = shuffle([q.a, ...q.w]);
       round.choices.forEach((choice, idx) => {
         const li = document.createElement("li");
@@ -388,13 +394,13 @@
       });
       opts.hidden = false;
       setActions([]);
-      $("keys").textContent = "A–D or 1–4 to answer · Enter for next";
+      $("keys").textContent = (q.audio ? "P to replay · " : "") + "A–D or 1–4 to answer · Enter for next";
     } else {
       opts.hidden = true;
       setActions([{ label: "Reveal answer", cls: "btn-big", fn: reveal }]);
-      $("keys").textContent = "Space to reveal · Y got it · N missed it";
+      $("keys").textContent = (q.audio ? "P to replay · " : "") + "Space to reveal · Y got it · N missed it";
     }
-    startTimer();
+    startTimer(round.timer && !q.audio);
   }
 
   function setActions(list, feedback) {
@@ -416,11 +422,11 @@
     }
   }
 
-  function startTimer() {
+  function startTimer(enabled) {
     stopTimer();
     const bar = $("timer");
-    bar.hidden = !round.timer;
-    if (!round.timer) return;
+    bar.hidden = !enabled;
+    if (!enabled) return;
     const fill = $("timer-fill");
     const end = performance.now() + TIME_LIMIT * 1000;
     const tick = () => {
@@ -508,7 +514,7 @@
     renderMeta();
     renderStreak();
     if (!ok && !reduceMotion) restartAnim($("card"), "shake");
-    if (round.mode === "recall") return;
+    if (round.qMode === "recall") return;
     showNote(q);
     const last = round.i === round.qs.length - 1;
     setActions([{ label: last ? "See results" : "Next question", cls: "btn-big", fn: next }], feedback);
@@ -571,11 +577,333 @@
     $("review").innerHTML = round.results.map((r) => {
       const q = BY_ID[r.id];
       const yours = !r.ok && r.picked ? ` · you said ${esc(r.picked)}` : "";
-      return `<li style="--cat:${catVar(q.c)}"><span class="mark ${r.ok ? "good" : "bad"}">${r.ok ? "✓" : "✗"}</span><div><p class="rq">${esc(q.q)}</p><p class="ra"><b>${esc(q.a)}</b>${yours}</p></div></li>`;
+      const tag = q.audio ? `<span class="tag">${q.kind === "music" ? "Music clip" : "Movie clip"}</span>` : "";
+      return `<li style="--cat:${catVar(q.c)}"><span class="mark ${r.ok ? "good" : "bad"}">${r.ok ? "✓" : "✗"}</span><div><p class="rq">${tag}${esc(q.q)}</p><p class="ra"><b>${esc(q.a)}</b>${yours}</p></div></li>`;
     }).join("");
     show("results");
     countUp($("score-num"), round.score);
     if (pct >= 0.7) setTimeout(() => confetti(innerWidth / 2, innerHeight * 0.45, 160, 1.6), 500);
+  }
+
+  // ---------- Listening round (audio clips) ----------
+  // Clips live in the artifact's shared store (db rows pointing at uploaded assets), so
+  // everyone the page is shared with plays the same library. Opened as a plain file,
+  // the page falls back to window.TRIVIA_CLIPS if a data/clips.js file defines it.
+  const A = window.TriviaAudio;
+  const CLIP_PROMPT = { music: "Name the song and the artist.", movie: "Name the movie." };
+  const KINDS = [["music", "Song"], ["movie", "Movie"]];
+  let clips = [];
+  let clipSource = "loading"; // loading | shared | static | none
+  let db = null, assets = null, sample = null;
+  let clipCtl = null;
+
+  const okStr = (v, max) => typeof v === "string" && v.trim() && v.length <= max;
+  function clipToQuestion(id, d) {
+    if (!d || !["music", "movie"].includes(d.kind) || !okStr(d.answer, 120)) return null;
+    let src = null;
+    if (typeof d.asset === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(d.asset)) src = "/_blob/" + d.asset;
+    else if (typeof d.src === "string" && /^[\w./-]+$/.test(d.src)) src = d.src; // static clips: relative paths only
+    if (!src) return null;
+    const start = Number.isFinite(d.start) ? Math.max(0, d.start) : 0;
+    const end = Number.isFinite(d.end) && d.end > start ? Math.min(d.end, start + 20) : start + 15;
+    const wrong = Array.isArray(d.wrong) && d.wrong.length === 3 && d.wrong.every((w) => okStr(w, 120)) ? d.wrong.map(String) : [];
+    return {
+      id: "clip-" + id, docId: id, asset: d.asset || null, kind: d.kind, c: d.kind === "music" ? "music" : "pop", d: 2,
+      q: CLIP_PROMPT[d.kind], a: d.answer.trim(), w: wrong, n: okStr(d.detail, 160) ? d.detail.trim() : "",
+      audio: { src, start, end }, addedAt: typeof d.addedAt === "string" ? d.addedAt : "",
+    };
+  }
+
+  function setClips(list) {
+    for (const c of clips) delete BY_ID[c.id];
+    clips = list.sort((a, b) => (b.addedAt || "").localeCompare(a.addedAt || ""));
+    for (const c of clips) BY_ID[c.id] = c;
+    renderSetup();
+  }
+
+  function renderListen() {
+    const music = clips.filter((c) => c.kind === "music").length;
+    const movie = clips.length - music;
+    $("listen-counts").innerHTML = `<li><b>${music}</b><span>music clips</span></li><li><b>${movie}</b><span>movie clips</span></li>`;
+    $("listen-music").disabled = !music;
+    $("listen-movie").disabled = !movie;
+    $("listen-mixed").disabled = !music || !movie;
+    const status = {
+      loading: "Loading clips…",
+      shared: clips.length
+        ? "Clips are shared with everyone you share this page with."
+        : assets ? "No clips yet. Add your first one with the form." : "No clips yet. Ask whoever runs this page to add some.",
+      static: clips.length ? "Playing the clips bundled with this copy of the app." : "No clips bundled with this copy.",
+      none: "Audio clips work on the shared Claude link, where they're stored with the page.",
+    }[clipSource];
+    $("listen-status").textContent = status;
+
+    const lib = $("clip-lib");
+    lib.hidden = !clips.length;
+    lib.querySelector("summary").textContent = `Clip library (${clips.length})`;
+    $("clip-list").innerHTML = clips.map((c) => `
+      <li style="--cat:${catVar(c.c)}">
+        <span class="clip-kind">${c.kind === "music" ? "Song" : "Movie"}</span>
+        <span class="clip-name">${esc(c.a)}</span>
+        <button class="link" type="button" data-listen="${esc(c.docId)}">Listen</button>
+        ${assets && c.asset ? `<button class="link" type="button" data-del="${esc(c.docId)}">Delete</button>` : "<span></span>"}
+      </li>`).join("");
+  }
+
+  let libPlayer = null;
+  $("clip-list").addEventListener("click", async (e) => {
+    const listen = e.target.closest("[data-listen]");
+    const del = e.target.closest("[data-del]");
+    if (listen) {
+      const c = clips.find((x) => x.docId === listen.dataset.listen);
+      if (libPlayer) libPlayer.destroy();
+      if (c) { libPlayer = A.clipPlayer(c.audio.src, c.audio.start, c.audio.end); libPlayer.play(); }
+    } else if (del) {
+      if (!del.classList.contains("armed")) {
+        del.classList.add("armed");
+        del.textContent = "Tap again to delete";
+        setTimeout(() => { del.classList.remove("armed"); del.textContent = "Delete"; }, 4000);
+        return;
+      }
+      const c = clips.find((x) => x.docId === del.dataset.del);
+      if (!c) return;
+      del.disabled = true;
+      try {
+        await db.collection("clips").doc(c.docId).delete();
+        if (c.asset) await assets.delete(c.asset).catch(() => {});
+      } catch (err) {
+        del.disabled = false;
+        del.textContent = "Couldn't delete";
+      }
+    }
+  });
+
+  function startListening(kind) {
+    const pool = kind === "mixed" ? clips : clips.filter((c) => c.kind === kind);
+    startRound(pickQuestions(pool, prefs.len));
+  }
+  $("listen-music").addEventListener("click", () => startListening("music"));
+  $("listen-movie").addEventListener("click", () => startListening("movie"));
+  $("listen-mixed").addEventListener("click", () => startListening("mixed"));
+
+  // The play button on the question card.
+  function stopClip() {
+    if (clipCtl) clipCtl.destroy();
+    clipCtl = null;
+  }
+  function setupPlayer(q) {
+    stopClip();
+    $("player").hidden = !q.audio;
+    $("q-text").classList.toggle("question-small", Boolean(q.audio));
+    if (!q.audio) return;
+    let plays = 0;
+    const ring = $("play-ring"), btn = $("play-btn"), label = $("play-label"), eq = $("play-eq");
+    clipCtl = A.clipPlayer(q.audio.src, q.audio.start, q.audio.end, {
+      onTick: (p) => { ring.style.strokeDashoffset = String(100 - p * 100); },
+      onState: (state) => {
+        const playing = state === "playing";
+        btn.classList.toggle("playing", playing);
+        btn.setAttribute("aria-label", playing ? "Stop clip" : "Play clip");
+        eq.classList.toggle("on", playing);
+        if (playing) plays++;
+        label.textContent = state === "error" ? "This clip couldn't be loaded."
+          : state === "blocked" ? "Tap play to hear the clip."
+          : playing ? "Listening…"
+          : plays ? `Played ${plays}×. Tap to hear it again.` : "Play clip";
+      },
+    });
+    label.textContent = "Play clip";
+    ring.style.strokeDashoffset = "100";
+    clipCtl.play(); // a start-round click came first, so autoplay is normally allowed
+  }
+  function toggleClip() {
+    if (!clipCtl) return;
+    clipCtl.playing ? clipCtl.stop() : clipCtl.play();
+  }
+  $("play-btn").addEventListener("click", toggleClip);
+
+  // ----- Add-a-clip editor (people who can edit the page) -----
+  const editor = { file: null, buffer: null, start: 0, len: 10, kind: "music", stopPreview: null, busy: false };
+  const fmt = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}${t % 1 ? "." + Math.round((t % 1) * 10) : ""}`;
+  const msg = (text, isErr) => { $("clip-msg").textContent = text; $("clip-msg").classList.toggle("err", Boolean(isErr)); };
+
+  function drawWave() {
+    if (!editor.buffer) return;
+    const cs = getComputedStyle(document.documentElement);
+    A.drawWaveform($("wave"), editor.buffer, { start: editor.start, len: editor.len }, {
+      window: cs.getPropertyValue("--bulb").trim(), active: cs.getPropertyValue("--ink").trim(), idle: cs.getPropertyValue("--line").trim(),
+    });
+  }
+  function syncTrim() {
+    const dur = editor.buffer ? editor.buffer.duration : 0;
+    const maxLen = Math.max(1, Math.min(A.MAX_LEN, Math.floor(dur)));
+    const lenIn = $("clip-len");
+    lenIn.max = String(maxLen);
+    lenIn.min = String(Math.min(A.MIN_LEN, maxLen));
+    editor.len = Math.min(editor.len, maxLen);
+    lenIn.value = String(editor.len);
+    const startIn = $("clip-start");
+    startIn.max = String(Math.max(0, dur - editor.len).toFixed(1));
+    editor.start = Math.min(editor.start, Number(startIn.max));
+    startIn.value = String(editor.start);
+    $("start-out").textContent = fmt(editor.start);
+    $("len-out").textContent = `${editor.len} s`;
+    drawWave();
+  }
+  function stopPreview() {
+    if (editor.stopPreview) editor.stopPreview();
+    editor.stopPreview = null;
+    $("clip-preview").textContent = "Preview clip";
+  }
+
+  async function loadFile(file) {
+    stopPreview();
+    if (!file) return;
+    if (file.size > 400 * 1024 * 1024) return msg("That file is over 400 MB. Trim it down first, or use an audio-only copy.", true);
+    $("drop-main").textContent = file.name;
+    msg("Reading audio…");
+    try {
+      editor.buffer = await A.decodeFile(file);
+      editor.file = file;
+      // Start near the middle of short files and a minute in on long ones.
+      editor.start = editor.buffer.duration > 120 ? 60 : Math.max(0, editor.buffer.duration / 2 - 5);
+      $("trim").hidden = false;
+      syncTrim();
+      msg(`${fmt(editor.buffer.duration)} long. Drag Start to the part you want.`);
+    } catch (e) {
+      editor.buffer = null;
+      $("trim").hidden = true;
+      msg("Couldn't read any audio from that file. Try an MP3, M4A, WAV or MP4.", true);
+    }
+  }
+
+  function setupEditor() {
+    $("clip-editor").hidden = false;
+    const fileIn = $("clip-file"), drop = $("drop");
+    fileIn.addEventListener("change", () => loadFile(fileIn.files[0]));
+    drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); loadFile(e.dataTransfer.files[0]); });
+    $("clip-start").addEventListener("input", (e) => { editor.start = Number(e.target.value); stopPreview(); syncTrim(); });
+    $("clip-len").addEventListener("input", (e) => { editor.len = Number(e.target.value); stopPreview(); syncTrim(); });
+    $("clip-preview").addEventListener("click", () => {
+      if (editor.stopPreview) return stopPreview();
+      editor.stopPreview = A.preview(editor.buffer, editor.start, editor.len, () => { editor.stopPreview = null; $("clip-preview").textContent = "Preview clip"; });
+      $("clip-preview").textContent = "Stop preview";
+    });
+    const renderKind = () => {
+      segmented($("seg-kind"), KINDS, editor.kind, (v) => { editor.kind = v; renderKind(); });
+      $("answer-label").textContent = editor.kind === "music" ? "Song and artist" : "Movie title";
+      $("clip-answer").placeholder = editor.kind === "music" ? "Bohemian Rhapsody by Queen" : "The Princess Bride";
+      $("clip-detail").placeholder = editor.kind === "music" ? "1975, from A Night at the Opera" : "1987. \"Inconceivable!\"";
+    };
+    renderKind();
+    addEventListener("resize", () => drawWave());
+
+    $("suggest").addEventListener("click", async () => {
+      const answer = $("clip-answer").value.trim();
+      if (!answer) return msg("Type the answer first, then ask for suggestions.", true);
+      const btn = $("suggest");
+      btn.disabled = true;
+      btn.textContent = "Thinking…";
+      try {
+        const what = editor.kind === "music" ? "song and artist" : "movie title";
+        const out = await sample.json(
+          `Suggest three wrong answers for a pub-quiz audio clip question. The correct ${what} is: "${answer}". ` +
+          `Make them plausible: the same era and genre, and written in the same format as the correct answer. ` +
+          `Reply with only a JSON array of exactly three strings.`,
+          { modelTier: "quick" }
+        );
+        if (Array.isArray(out) && out.length >= 3) out.slice(0, 3).forEach((w, i) => { $("wrong-" + (i + 1)).value = String(w).slice(0, 120); });
+        else msg("Claude didn't return three answers. Try again or type your own.", true);
+      } catch (e) {
+        if (e && e.code === "not_granted") btn.hidden = true;
+        msg("Couldn't get suggestions right now. Type your own.", true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Suggest with Claude";
+      }
+    });
+
+    $("clip-editor").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (editor.busy) return;
+      const answer = $("clip-answer").value.trim();
+      const detail = $("clip-detail").value.trim();
+      const wrong = [1, 2, 3].map((i) => $("wrong-" + i).value.trim());
+      if (!editor.buffer) return msg("Choose an audio or video file first.", true);
+      if (!answer) return msg(editor.kind === "music" ? "Add the song and artist." : "Add the movie title.", true);
+      const filled = wrong.filter(Boolean).length;
+      if (filled && filled < 3) return msg("Fill in all three wrong answers, or leave them all empty.", true);
+      if (filled && new Set([answer, ...wrong].map((x) => x.toLowerCase())).size < 4) return msg("The wrong answers need to differ from each other and from the answer.", true);
+
+      editor.busy = true;
+      stopPreview();
+      $("clip-save").disabled = true;
+      try {
+        let blob, uploadType, start = 0, end = editor.len;
+        try {
+          msg("Cutting your clip… 0%");
+          ({ blob, uploadType } = await A.cutClip(editor.buffer, editor.start, editor.len, (p) => msg(`Cutting your clip… ${Math.round(p * 100)}%`)));
+        } catch (err) {
+          // No recorder in this browser: store the original file if it's small and a supported container.
+          const t = editor.file.type;
+          uploadType = /mp4|m4a/.test(t) ? "video/mp4" : /webm/.test(t) ? "video/webm" : null;
+          if (!uploadType || editor.file.size > 20 * 1024 * 1024) {
+            throw new Error("This browser can't cut clips from that file. Try Chrome, Edge or Firefox, or an M4A/MP4 under 20 MB.");
+          }
+          blob = editor.file;
+          start = editor.start;
+          end = editor.start + editor.len;
+        }
+        msg("Uploading…");
+        const up = await assets.upload(blob, { type: uploadType });
+        await db.collection("clips").doc().set({
+          kind: editor.kind, answer, detail, wrong: filled ? wrong : [], asset: up.id, start, end, addedAt: new Date().toISOString(),
+        });
+        msg(`Saved "${answer}". Add another, or start a listening round.`);
+        $("clip-answer").value = "";
+        $("clip-detail").value = "";
+        [1, 2, 3].forEach((i) => { $("wrong-" + i).value = ""; });
+      } catch (err) {
+        const code = err && err.code;
+        msg(code === "too_large" ? "That clip came out over 20 MB. Try a shorter length."
+          : code === "quota_or_state" ? "This page's storage is full. Delete some clips first."
+          : code === "rate_limited" ? "Too many uploads in a row. Wait a moment and try again."
+          : (err && err.message) || "Couldn't save the clip. Try again.", true);
+      } finally {
+        editor.busy = false;
+        $("clip-save").disabled = false;
+      }
+    });
+  }
+
+  async function waitForClaude() {
+    for (let i = 0; i < 20 && !(window.claude && window.claude.use); i++) await new Promise((r) => setTimeout(r, 100));
+    return window.claude && window.claude.use ? window.claude : null;
+  }
+
+  async function initClips() {
+    const claude = await waitForClaude();
+    db = claude ? await claude.use("db").catch(() => null) : null;
+    if (!db) {
+      const bundled = Array.isArray(window.TRIVIA_CLIPS) ? window.TRIVIA_CLIPS : [];
+      clipSource = bundled.length ? "static" : "none";
+      setClips(bundled.map((d, i) => clipToQuestion(d.id || "static-" + i, d)).filter(Boolean));
+      return;
+    }
+    clipSource = "shared";
+    db.collection("clips").onSnapshot(
+      (snap) => setClips(snap.docs.map((d) => clipToQuestion(d.id, d.data())).filter(Boolean)),
+      () => { $("listen-status").textContent = "Couldn't load the clip library. Reload the page to try again."; }
+    );
+    assets = await claude.use("assets").catch(() => null);
+    if (assets) {
+      setupEditor();
+      sample = await claude.use("sample").catch(() => null);
+      $("suggest").hidden = !sample;
+    }
+    renderListen();
   }
 
   // ---------- Wiring ----------
@@ -586,7 +914,7 @@
   });
   $("quick").addEventListener("click", () => startRound(pickQuestions(QUESTIONS, 10)));
   $("start").addEventListener("click", () => startRound(pickQuestions(filteredPool(), prefs.len)));
-  $("drill").addEventListener("click", () => startRound(pickQuestions(stats.missed.map((id) => BY_ID[id]), prefs.len)));
+  $("drill").addEventListener("click", () => startRound(pickQuestions(knownMisses().map((id) => BY_ID[id]), prefs.len)));
   $("again").addEventListener("click", () => startRound(pickQuestions(filteredPool(), prefs.len)));
   $("redo-misses").addEventListener("click", () => {
     const ids = round.results.filter((r) => !r.ok).map((r) => r.id);
@@ -622,7 +950,8 @@
   document.addEventListener("keydown", (e) => {
     if ($("play").hidden || !round || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
-    if (round.mode === "mc") {
+    if (k === "p" && clipCtl) { e.preventDefault(); toggleClip(); return; }
+    if (round.qMode === "mc") {
       if (!round.answered) {
         const idx = "abcd".indexOf(k) >= 0 ? "abcd".indexOf(k) : "1234".indexOf(k);
         if (idx >= 0) { e.preventDefault(); answerChoice(idx); }
@@ -650,4 +979,5 @@
   renderTicker();
   renderSetup();
   startRotator();
+  initClips();
 })();

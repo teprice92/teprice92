@@ -12,6 +12,7 @@ Open `index.html` in a browser. That's it.
 - **Two formats**
   - *Multiple choice*: four options, optional 20-second timer. Keys A–D or 1–4 to answer, Enter for next.
   - *Pub rules*: no options. Say your answer, reveal it, and mark yourself (Y / N). This is how a real quiz night works.
+- **Listening round**: 5 to 15 second music and movie clips. Add a clip by choosing an audio or video file, pick the moment on its waveform, and the app saves only that short piece. Clips with three wrong answers can be played multiple choice; the rest are played pub rules.
 - **Drill my misses**: every question you get wrong goes on a list until you get it right.
 - **Your wheel**: one wedge per category that grows with your accuracy, so you can see your weak spots.
 - Questions you've seen least are served first, so repeat rounds stay fresh.
@@ -39,6 +40,20 @@ npm test
 
 **Automatic weekly refresh:** `.github/workflows/refresh-trivia.yml` runs every Monday and commits any new questions. It only runs from the repository's default branch, so merge this branch first. To include Claude's questions, add an `ANTHROPIC_API_KEY` secret under *Settings → Secrets and variables → Actions*. You can also run it by hand from the Actions tab.
 
+## Audio clips
+
+On the shared Claude link, clips are stored with the page itself (its shared database plus uploaded files), so everyone it's shared with plays the same library. Only people who can edit the page can add or delete clips. Clips are cut and re-encoded in the browser (`audio.js`), which works in Chrome, Edge, Firefox and Safari.
+
+Opened as a plain file or from GitHub Pages, there's no shared storage. You can still bundle clips by adding a `data/clips.js` file and a `<script src="data/clips.js">` tag before `app.js`:
+
+```js
+window.TRIVIA_CLIPS = [
+  { kind: "music", answer: "Song by Artist", detail: "1984", wrong: ["…", "…", "…"], src: "clips/song.m4a", start: 30, end: 40 },
+];
+```
+
+Keep clips short and the app private to your group: songs and films are copyrighted.
+
 ## Adding questions
 
 Edit `questions.js`. Each entry is:
@@ -55,7 +70,8 @@ Add new questions at the **end** of a category's list. Question IDs come from th
 | --- | --- |
 | `index.html` | Page structure for the three screens (setup, question, results) |
 | `styles.css` | Light and dark themes, layout |
-| `app.js` | Round logic, timer, scoring, saved stats, the wheel |
+| `app.js` | Round logic, timer, scoring, saved stats, the wheel, the clip library |
+| `audio.js` | Decoding, waveform drawing, clip cutting and playback |
 | `questions.js` | The hand-written core question bank |
 | `data/packs.js` | Generated questions from the updater (don't edit by hand) |
 | `scripts/update-questions.mjs` | The question updater, with tests in `update-questions.test.mjs` |

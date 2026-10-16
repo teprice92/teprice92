@@ -21,6 +21,7 @@
     </button>
     <nav class="topnav" id="topnav" aria-label="Sections">
       <a href="#deck">Categories</a>
+      <a href="#listen">Listening</a>
       <a href="#rules">Rules</a>
       <a href="#progress">Your wheel</a>
     </nav>
@@ -60,6 +61,71 @@
       <button class="link" id="cats-toggle" type="button">Select none</button>
     </header>
     <div class="deck" id="cat-grid"></div>
+  </section>
+
+  <section id="listen" class="section wrap">
+    <header class="sec-head">
+      <p class="eyebrow">Listening round</p>
+      <h2 class="sec-h">Name that tune. Name that film.</h2>
+      <p class="sec-sub">Short 5 to 15 second clips from songs and movies, just like the audio round at quiz night.</p>
+    </header>
+    <div class="listen-grid">
+      <div class="listen-stage">
+        <div class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <ul class="listen-counts" id="listen-counts"></ul>
+        <div class="listen-actions">
+          <button class="btn btn-big" id="listen-music" type="button">Music round</button>
+          <button class="btn btn-ghost" id="listen-movie" type="button">Movie round</button>
+          <button class="btn btn-ghost" id="listen-mixed" type="button">Mixed</button>
+        </div>
+        <p class="hint" id="listen-status">Loading clips…</p>
+      </div>
+
+      <form class="clip-editor" id="clip-editor" hidden novalidate>
+        <h3 class="editor-h">Add a clip</h3>
+        <label class="drop" id="drop" for="clip-file">
+          <input type="file" id="clip-file" accept="audio/*,video/*">
+          <span class="drop-main" id="drop-main">Choose or drop an audio or video file</span>
+          <span class="drop-sub">MP3, M4A, WAV, MP4 and more. Only the part you pick is saved.</span>
+        </label>
+
+        <div class="trim" id="trim" hidden>
+          <canvas class="wave" id="wave" aria-label="Waveform with the selected clip highlighted"></canvas>
+          <div class="trim-row">
+            <label for="clip-start">Start <output id="start-out">0:00</output></label>
+            <input type="range" id="clip-start" min="0" max="0" step="0.1" value="0">
+          </div>
+          <div class="trim-row">
+            <label for="clip-len">Length <output id="len-out">10 s</output></label>
+            <input type="range" id="clip-len" min="5" max="15" step="1" value="10">
+          </div>
+          <button class="btn btn-ghost btn-small" id="clip-preview" type="button">Preview clip</button>
+        </div>
+
+        <div class="seg" id="seg-kind" role="radiogroup" aria-label="Clip type"></div>
+        <label class="field-l" for="clip-answer"><span id="answer-label">Song and artist</span>
+          <input type="text" id="clip-answer" maxlength="120" autocomplete="off" placeholder="Bohemian Rhapsody by Queen">
+        </label>
+        <label class="field-l" for="clip-detail">Extra detail <span class="opt-l">optional, shown with the answer</span>
+          <input type="text" id="clip-detail" maxlength="160" autocomplete="off" placeholder="1975, from A Night at the Opera">
+        </label>
+        <fieldset class="wrongs">
+          <legend>Wrong answers <span class="opt-l">optional; without them the clip is played pub rules</span></legend>
+          <input type="text" id="wrong-1" maxlength="120" autocomplete="off" aria-label="Wrong answer 1">
+          <input type="text" id="wrong-2" maxlength="120" autocomplete="off" aria-label="Wrong answer 2">
+          <input type="text" id="wrong-3" maxlength="120" autocomplete="off" aria-label="Wrong answer 3">
+          <button class="link" id="suggest" type="button" hidden>Suggest with Claude</button>
+        </fieldset>
+        <div class="editor-foot">
+          <button class="btn btn-big" id="clip-save" type="submit">Save clip</button>
+          <p class="hint" id="clip-msg" role="status"></p>
+        </div>
+      </form>
+    </div>
+    <details class="clip-lib" id="clip-lib" hidden>
+      <summary>Clip library</summary>
+      <ul class="clip-list" id="clip-list"></ul>
+    </details>
   </section>
 
   <section id="rules" class="section wrap">
@@ -136,6 +202,17 @@
     <section class="card" id="card" aria-live="polite">
       <div class="timer" id="timer" hidden><div class="timer-fill" id="timer-fill"></div></div>
       <h2 class="question" id="q-text"></h2>
+      <div class="player" id="player" hidden>
+        <button class="play-btn" id="play-btn" type="button" aria-label="Play clip">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="ring-bg" cx="50" cy="50" r="46"/>
+            <circle class="ring" id="play-ring" cx="50" cy="50" r="46" pathLength="100"/>
+          </svg>
+          <span class="play-icon" id="play-icon" aria-hidden="true"></span>
+        </button>
+        <div class="eq eq-small" id="play-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="play-label" id="play-label">Play clip</p>
+      </div>
       <ol class="options" id="options"></ol>
       <div class="reveal" id="reveal" hidden>
         <p class="reveal-label">Answer</p>
@@ -172,6 +249,7 @@
 
 <script src="questions.js"></script>
 <script src="data/packs.js"></script>
+<script src="audio.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
