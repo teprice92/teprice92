@@ -1,0 +1,41 @@
+# One-off helper: downloads the Higgsfield-generated character models, shrinks
+# them for the web (1024px WebP textures, quantized vertices) and commits them.
+# Triggered by pushing this file; can also be re-run by hand.
+name: Fetch character models
+
+on:
+  push:
+    branches: [ccr-c2dbc4fc-kuhpy2]
+    paths: ['.github/workflows/fetch-models.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Download models
+        run: bash shinobi-shadows/tools/fetch-models.sh
+      - name: Optimize for the web
+        working-directory: shinobi-shadows/assets/models
+        run: |
+          for f in *.glb; do
+            npx -y @gltf-transform/cli@4 optimize "$f" "opt-$f" \
+              --compress quantize --texture-compress webp --texture-size 1024 \
+              --simplify false --flatten false --join false
+            mv "opt-$f" "$f"
+          done
+          ls -la
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add shinobi-shadows/assets/models
+          git commit -m "Add Higgsfield-generated 3D character models"
+          git push
