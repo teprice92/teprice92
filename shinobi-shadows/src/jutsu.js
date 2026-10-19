@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildNinja, animateNinja } from './models.js';
+import { createNinjaModel, animateNinja } from './models.js';
 import { moveAndCollide, raycast, lineOfSight, pointInBoxes } from './physics.js';
 import { sfx } from './audio.js';
 
@@ -33,7 +33,7 @@ export const JUTSU = {
         const ang = (i - (count - 1) / 2) * 0.9 + (Math.random() - 0.5) * 0.3;
         const dir = f.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), ang);
         const start = p.pos.clone().addScaledVector(dir, 0.8);
-        game.decoys.push(new Decoy(game, start, dir, p.char.colors, p.char.look));
+        game.decoys.push(new Decoy(game, start, dir, p.char));
         game.effects.smokePuff(start.clone().setY(start.y + 1), 0.6);
       }
       sfx('poof');
@@ -308,9 +308,9 @@ export const JUTSU = {
 
 /** A shadow clone: runs off on its own and draws guard attention. */
 export class Decoy {
-  constructor(game, pos, dir, colors, look) {
+  constructor(game, pos, dir, character) {
     this.game = game;
-    this.model = buildNinja(colors, look);
+    this.model = createNinjaModel(character);
     game.scene.add(this.model.group);
     this.pos = pos.clone();
     this.vel = dir.clone().multiplyScalar(9);

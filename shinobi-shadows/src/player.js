@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildNinja, animateNinja } from './models.js';
+import { createNinjaModel, animateNinja } from './models.js';
 import { moveAndCollide, groundBelow, raycast } from './physics.js';
 import { JUTSU } from './jutsu.js';
 import { sfx, footstep } from './audio.js';
@@ -21,7 +21,7 @@ export class Player {
     this.stats = character.stats;
     this.traits = character.traits || {};
 
-    const m = buildNinja(character.colors, character.look);
+    const m = createNinjaModel(character);
     this.model = m;
     game.scene.add(m.group);
 

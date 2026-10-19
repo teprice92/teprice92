@@ -9,6 +9,8 @@ import { HUD } from './hud.js';
 import { CHARACTERS } from './characters.js';
 import { JUTSU } from './jutsu.js';
 import { raycast } from './physics.js';
+import { loadModels } from './rigged.js';
+import { MODEL_MANIFEST } from './models.js';
 import { initAudio, sfx, setVolume, setListener, setMusicState, setPond } from './audio.js';
 import { PostFX } from './post.js';
 import { loadSettings, saveSettings, renderSettings } from './settings.js';
@@ -558,5 +560,12 @@ class Game {
   }
 }
 
-const game = new Game();
-window.__game = game; // handy for debugging from the console
+// Load the 3D character models first; any that are missing fall back to the primitive look.
+const startBtn = $('btn-start');
+startBtn.disabled = true;
+startBtn.textContent = 'Loading…';
+loadModels(MODEL_MANIFEST, (done, total) => { startBtn.textContent = `Loading ${done}/${total}`; }).finally(() => {
+  startBtn.disabled = false;
+  startBtn.textContent = 'Begin';
+  window.__game = new Game(); // handy for debugging from the console
+});

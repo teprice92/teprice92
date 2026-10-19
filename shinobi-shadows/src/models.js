@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { tex } from './textures.js';
+import { hasModel, createRigged } from './rigged.js';
 
 // Characters built from primitives with procedural animation.
 // Every model faces +Z and has its origin at the feet.
@@ -150,10 +151,7 @@ export function buildNinja(colors, look = {}) {
   const armL = arm(-1), armR = arm(1);
 
   // Tanto in the right hand.
-  const blade = new THREE.Group();
-  blade.add(part(boxGeo(0.025, 0.07, 0.62), metal, 0, 0, 0.32));
-  blade.add(part(cylGeo(0.06, 0.06, 0.015), mat(0x8a6a20, { metalness: 0.8, roughness: 0.4 }), 0, 0, 0.02).rotateX(Math.PI / 2));
-  blade.add(part(boxGeo(0.04, 0.045, 0.18), mat(0x1a1a1a), 0, 0, -0.08));
+  const blade = makeTanto();
   blade.position.set(0, -0.3, 0.03);
   armR.joint.add(blade);
 
@@ -186,7 +184,7 @@ export function buildNinja(colors, look = {}) {
  * Animates a ninja model.
  * s = { speed, grounded, sprinting, crouching, climbing, vy, attackT (0..1 or -1), casting }
  */
-export function animateNinja(model, s, dt) {
+function poseNinja(model, s, dt) {
   const p = model.parts;
   const a = model.anim;
   const k = 1 - Math.exp(-dt * 14);
@@ -372,20 +370,12 @@ export function buildGuard(type) {
 
   let weapon;
   const armL = arm(-1, type === 'archer' ? (elbow) => {
-    // Tall asymmetric yumi bow
-    weapon = part(new THREE.TorusGeometry(0.85, 0.02, 4, 24, Math.PI * 0.9), mat(0x3a2414, { roughness: 0.5 }));
-    weapon.rotation.set(0, Math.PI / 2, Math.PI / 2 + 0.15);
+    weapon = makeBow();
     weapon.position.set(0, -0.3, 0.1);
     elbow.add(weapon);
   } : null);
   const armR = arm(1, type !== 'archer' ? (elbow) => {
-    weapon = new THREE.Group();
-    const bladeLen = type === 'lord' ? 0.65 : 0.95;
-    const blade = part(boxGeo(0.03, 0.07, bladeLen), metal, 0, 0, bladeLen / 2 + 0.05);
-    blade.rotation.x = -0.06; // slight curve suggestion
-    weapon.add(blade);
-    weapon.add(part(cylGeo(0.07, 0.07, 0.02), gold, 0, 0, 0.04).rotateX(Math.PI / 2));
-    weapon.add(part(boxGeo(0.045, 0.045, 0.26), dark, 0, 0, -0.1));
+    weapon = makeKatana(type === 'lord' ? 0.65 : 0.95);
     weapon.position.set(0, -0.3, 0.04);
     elbow.add(weapon);
   } : null);
@@ -409,7 +399,7 @@ export function buildGuard(type) {
 }
 
 /** s = { speed, attackT, aiming, dead, deadT, bound, alert } */
-export function animateGuard(model, s, dt) {
+function poseGuard(model, s, dt) {
   const p = model.parts;
   const a = model.anim;
   const k = 1 - Math.exp(-dt * 10);
@@ -461,3 +451,83 @@ export function animateGuard(model, s, dt) {
   p.armR.rotation.z = lerp(p.armR.rotation.z, 0);
   p.armL.rotation.x = lerp(p.armL.rotation.x, sw * amp * 0.6);
 }
+
+export function animateNinja(model, s, dt) {
+  poseNinja(model, s, dt);
+  if (model.sync) model.sync();
+}
+
+export function animateGuard(model, s, dt) {
+  poseGuard(model, s, dt);
+  if (model.sync) model.sync();
+}
+
+// ---------------- Props ----------------
+
+const metalMat = () => mat(0xc9d2dc, { metalness: 0.85, roughness: 0.28 });
+
+/** Short reverse-grip blade; points along +Z from the hand. */
+export function makeTanto() {
+  const blade = new THREE.Group();
+  blade.add(part(boxGeo(0.025, 0.07, 0.62), metalMat(), 0, 0, 0.32));
+  blade.add(part(cylGeo(0.06, 0.06, 0.015), mat(0x8a6a20, { metalness: 0.8, roughness: 0.4 }), 0, 0, 0.02).rotateX(Math.PI / 2));
+  blade.add(part(boxGeo(0.04, 0.045, 0.18), mat(0x1a1a1a), 0, 0, -0.08));
+  return blade;
+}
+
+export function makeKatana(len = 0.95) {
+  const weapon = new THREE.Group();
+  const blade = part(boxGeo(0.03, 0.07, len), metalMat(), 0, 0, len / 2 + 0.05);
+  blade.rotation.x = -0.06; // slight curve suggestion
+  weapon.add(blade);
+  weapon.add(part(cylGeo(0.07, 0.07, 0.02), mat(0xe0b040, { metalness: 0.9, roughness: 0.3 }), 0, 0, 0.04).rotateX(Math.PI / 2));
+  weapon.add(part(boxGeo(0.045, 0.045, 0.26), mat(0x151515), 0, 0, -0.1));
+  return weapon;
+}
+
+/** Tall asymmetric yumi bow. */
+export function makeBow() {
+  const bow = part(new THREE.TorusGeometry(0.85, 0.02, 4, 24, Math.PI * 0.9), mat(0x3a2414, { roughness: 0.5 }));
+  bow.rotation.set(0, Math.PI / 2, Math.PI / 2 + 0.15);
+  const holder = new THREE.Group();
+  holder.add(bow);
+  return holder;
+}
+
+// ---------------- Model selection ----------------
+
+// Generated, rigged models (see rigged.js) replace the primitive ones when present.
+const GUARD_MODELS = {
+  sword: { id: 'guard', height: 1.85 },
+  archer: { id: 'guard', height: 1.85, hue: 2.1 }, // red armour recoloured green
+  elite: { id: 'elite', height: 1.95 },
+  lord: { id: 'elite', height: 2.0, hue: -1.2, width: 1.25 }, // stockier, violet-lacquered
+};
+
+export function createNinjaModel(character) {
+  if (!hasModel(character.id)) return buildNinja(character.colors, character.look);
+  const m = createRigged(character.id, { height: character.height || 1.75 });
+  const blade = makeTanto();
+  m.attach('R', blade);
+  m.parts.blade = blade;
+  return m;
+}
+
+export function createGuardModel(type) {
+  const cfg = GUARD_MODELS[type];
+  if (!hasModel(cfg.id)) return buildGuard(type);
+  const m = createRigged(cfg.id, cfg);
+  if (type === 'archer') { const bow = makeBow(); m.attach('L', bow); m.parts.weapon = bow; }
+  else { const k = makeKatana(type === 'lord' ? 0.65 : 0.95); m.attach('R', k); m.parts.weapon = k; }
+  return m;
+}
+
+/** Model files generated with Higgsfield (image-to-3D, auto-rigged). */
+export const MODEL_MANIFEST = {
+  hayate: 'assets/models/hayate.glb',
+  raiden: 'assets/models/raiden.glb',
+  tsubaki: 'assets/models/tsubaki.glb',
+  kagero: 'assets/models/kagero.glb',
+  guard: 'assets/models/guard.glb',
+  elite: 'assets/models/elite.glb',
+};

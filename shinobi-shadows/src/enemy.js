@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildGuard, animateGuard } from './models.js';
+import { createGuardModel, animateGuard } from './models.js';
 import { moveAndCollide, lineOfSight } from './physics.js';
 import { makeMarker } from './effects.js';
 import { turnToward } from './player.js';
@@ -56,7 +56,7 @@ export class Guard {
     this.height = 1.85;
     this.isLord = def.type === 'lord';
 
-    this.model = buildGuard(def.type);
+    this.model = createGuardModel(def.type);
     game.scene.add(this.model.group);
 
     this.marker = makeMarker();
