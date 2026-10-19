@@ -6,7 +6,7 @@
   <title>Shinobi Shadows</title>
   <link rel="stylesheet" href="style.css" />
   <script type="importmap">
-    { "imports": { "three": "./vendor/three.module.min.js" } }
+    { "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
   </script>
 </head>
 <body>
@@ -55,6 +55,7 @@
       <p class="subtitle">A stealth-action shinobi tale</p>
       <button id="btn-start" class="btn">Begin</button>
       <p class="hint">Best with mouse &amp; keyboard on desktop</p>
+      <div class="settings" id="settings-title"></div>
     </div>
   </div>
 
@@ -94,6 +95,8 @@
   <div id="screen-pause" class="screen hidden">
     <div class="panel small">
       <h2>Paused</h2>
+      <div class="settings" id="settings-pause"></div>
+      <p class="muted small-note">Grass, shadow and mist changes apply on the next mission.</p>
       <button id="btn-resume" class="btn">Resume</button>
       <button id="btn-quit" class="btn ghost">Abandon Mission</button>
     </div>

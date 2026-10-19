@@ -74,8 +74,8 @@ export class HUD {
 
   setGrappleAim(on) { this.crosshair.classList.toggle('grapple', on); }
 
-  setSense(on) {
-    this.root.style.background = on ? 'radial-gradient(ellipse at center, transparent 50%, rgba(160, 0, 0, 0.35))' : '';
+  setSense() {
+    // The red Crimson Eye view is drawn by the post-processing grade (post.js).
   }
 
   hurt() {

@@ -3,7 +3,7 @@ import { buildGuard, animateGuard } from './models.js';
 import { moveAndCollide, lineOfSight } from './physics.js';
 import { makeMarker } from './effects.js';
 import { turnToward } from './player.js';
-import { sfx } from './audio.js';
+import { sfx, footstep } from './audio.js';
 
 const TYPES = {
   sword: { hp: 100, walk: 2.4, run: 6.4, sight: 24, fov: 62, damage: 14, reach: 2.1, throws: true },
@@ -427,7 +427,7 @@ export class Guard {
     this.attackT += dt / 0.85;
     if (!this.didHit && this.attackT >= 0.7) {
       this.didHit = true;
-      sfx('swing');
+      sfx('swing', this.pos);
       const tgt = this.target;
       if (tgt && tgt.alive) {
         const d = tgt.pos.clone().sub(this.pos);
@@ -435,7 +435,7 @@ export class Guard {
         d.y = 0;
         if (d.length() < this.cfg.reach + 0.6 && Math.abs(dy) < 1.8 && d.normalize().dot(this.forward) > 0.3) {
           tgt.takeDamage(this.cfg.damage, this.pos);
-          sfx('clank');
+          sfx('clank', this.pos);
         }
       }
     }
@@ -461,7 +461,7 @@ export class Guard {
       type: thrown ? 'shuriken' : 'arrow', owner: 'enemy', pos: from, vel: dir.multiplyScalar(speed),
       damage: thrown ? 8 : this.cfg.damage, gravity: thrown ? 2 : 1.5,
     });
-    sfx(thrown ? 'throw' : 'arrow');
+    sfx(thrown ? 'throw' : 'arrow', this.pos);
   }
 
   applyPhysics(dt, mx, mz, speed) {
@@ -474,6 +474,13 @@ export class Guard {
     const res = moveAndCollide(this.pos, this.half, this.height, delta, this.game.world.colliders);
     if (res.onGround) this.vel.y = 0;
     this.speedNow = Math.hypot(this.pos.x - before.x, this.pos.z - before.z) / Math.max(dt, 1e-4);
+    if (!this.dead && this.speedNow > 0.6 && res.onGround) {
+      this.stepT = (this.stepT || 0) - dt;
+      if (this.stepT <= 0) {
+        this.stepT = Math.max(0.28, 1.1 / (this.speedNow * 0.55 + 0.8));
+        footstep(this.game.world.surfaceAt(this.pos, null), 0.55, this.pos);
+      }
+    }
 
     if (speed > 0 && this.detourT <= 0) {
       if (this.speedNow < speed * 0.3) this.stuckT += dt;

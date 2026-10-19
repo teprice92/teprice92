@@ -33,7 +33,7 @@ export const JUTSU = {
         const ang = (i - (count - 1) / 2) * 0.9 + (Math.random() - 0.5) * 0.3;
         const dir = f.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), ang);
         const start = p.pos.clone().addScaledVector(dir, 0.8);
-        game.decoys.push(new Decoy(game, start, dir, p.char.colors));
+        game.decoys.push(new Decoy(game, start, dir, p.char.colors, p.char.look));
         game.effects.smokePuff(start.clone().setY(start.y + 1), 0.6);
       }
       sfx('poof');
@@ -74,7 +74,7 @@ export const JUTSU = {
             game.effects.flashLight(at, 0x8fe4ff, 80, 0.4);
             game.cam.shake(0.45);
             game.makeNoise(at, 14);
-            sfx('boom');
+            sfx('boom', at);
             return true;
           },
           onEnd: () => {
@@ -165,7 +165,7 @@ export const JUTSU = {
           game.effects.flashLight(at, 0xff7a2a, 150, 0.8, 26);
           game.cam.shake(0.4);
           game.makeNoise(at, 26);
-          sfx('boom');
+          sfx('boom', at);
         },
       });
       sfx('fire');
@@ -308,9 +308,9 @@ export const JUTSU = {
 
 /** A shadow clone: runs off on its own and draws guard attention. */
 export class Decoy {
-  constructor(game, pos, dir, colors) {
+  constructor(game, pos, dir, colors, look) {
     this.game = game;
-    this.model = buildNinja(colors);
+    this.model = buildNinja(colors, look);
     game.scene.add(this.model.group);
     this.pos = pos.clone();
     this.vel = dir.clone().multiplyScalar(9);
@@ -358,7 +358,7 @@ export class Decoy {
     this.alive = false;
     this.game.scene.remove(this.model.group);
     this.game.effects.smokePuff(this.center, 0.8);
-    sfx('poof');
+    sfx('poof', this.pos);
     for (const g of this.game.guards) if (g.target === this) g.loseTarget(this.pos);
   }
 }

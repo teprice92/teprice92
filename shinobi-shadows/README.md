@@ -17,8 +17,12 @@ python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-(`npx serve` or the VS Code "Live Server" extension work too.) Three.js is bundled in `vendor/`,
-so it runs offline.
+(`npx serve` or the VS Code "Live Server" extension work too.) Three.js and the add-ons it uses
+are bundled in `vendor/`, so it runs offline.
+
+**Settings** (title screen and pause menu): graphics quality (Low / Medium / High) and volume
+sliders for master, music and effects. Your choices are remembered. Drop to Medium or Low if the
+frame rate struggles. Low turns off bloom, shadows, grass and mist.
 
 ## Controls
 
@@ -60,6 +64,24 @@ so it runs offline.
 All characters, names and the setting are original; they're inspired by Naruto archetypes, not
 copies of them.
 
+## Graphics and sound
+
+Nothing is loaded from image or audio files; it's all generated when the game starts.
+
+- **Textures** (`textures.js`) are painted onto canvases: kawara roof tiles, plaster walls with
+  timber frames and shoji screens that glow at night, castle stonework, wood, raked gravel, grass,
+  lamellar armour, and the Lord's patterned robe.
+- **Lighting**: moonlight with soft shadows, flickering stone lanterns, a gradient night sky with
+  twinkling stars and a haloed moon, plus bloom and colour grading (`post.js`). Crimson Eye turns
+  the world red and grey.
+- **World life**: swaying grass, fireflies, falling cherry petals, drifting ground mist and clouds,
+  and a rippling pond with lily pads.
+- **Sound** (`audio.js`): synthesised effects that are panned and fade with distance, footsteps that
+  change with the surface (grass, gravel, wood, roof tiles, stone, for you and the guards),
+  crickets, wind, owls and pond frogs, and a generative score on the Japanese *in* scale with koto
+  and shakuhachi. It turns tense when guards get suspicious and breaks into taiko drums when
+  you're spotted.
+
 ## Code tour
 
 | File | What's in it |
@@ -71,9 +93,13 @@ copies of them.
 | `src/characters.js` | Character roster, stats and jutsu loadouts |
 | `src/world.js` | Level layout, lanterns, colliders and guard patrol routes |
 | `src/physics.js` | Axis-aligned box collision, raycasts and line of sight |
-| `src/models.js` | Primitive-built characters with procedural animation |
+| `src/models.js` | Characters built from primitives, with knees/elbows and procedural animation |
 | `src/effects.js` | GPU particles, shockwaves, lightning bolts, ? / ! markers |
-| `src/camera.js`, `src/input.js`, `src/hud.js`, `src/audio.js` | Camera, controls, HUD, synthesised sound |
+| `src/textures.js` | Procedural canvas textures |
+| `src/post.js` | Bloom, colour grading and quality presets |
+| `src/audio.js` | Synthesised effects, footsteps, ambience and the adaptive score |
+| `src/settings.js` | Graphics/volume settings UI and storage |
+| `src/camera.js`, `src/input.js`, `src/hud.js` | Camera, controls, HUD |
 
 Good places to start tinkering: tweak a character's `stats` in `characters.js`, add a jutsu to
 `JUTSU` in `jutsu.js` and give it to someone, or add guards and patrol routes to `guardDefs` in

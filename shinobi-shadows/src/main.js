@@ -9,7 +9,9 @@ import { HUD } from './hud.js';
 import { CHARACTERS } from './characters.js';
 import { JUTSU } from './jutsu.js';
 import { raycast } from './physics.js';
-import { initAudio, sfx } from './audio.js';
+import { initAudio, sfx, setVolume, setListener, setMusicState, setPond } from './audio.js';
+import { PostFX } from './post.js';
+import { loadSettings, saveSettings, renderSettings } from './settings.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -35,8 +37,9 @@ function segmentPointDist(a, b, p) {
 class Game {
   constructor() {
     this.container = $('game');
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.settings = loadSettings();
+    for (const k of ['master', 'music', 'sfx']) setVolume(k, this.settings[k]);
+    this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -56,7 +59,7 @@ class Game {
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.post.setSize(window.innerWidth, window.innerHeight);
     });
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Escape' || e.code === 'KeyP') {
@@ -67,6 +70,8 @@ class Game {
 
     this.buildMenus();
     this.buildScene(); // backdrop for the menus
+    this.post = new PostFX(this.renderer, this.scene, this.camera, this.settings.quality);
+    this.hurtT = 0;
     this.renderer.setAnimationLoop(() => this.frame());
   }
 
@@ -74,7 +79,9 @@ class Game {
 
   buildScene() {
     this.scene = new THREE.Scene();
-    this.world = buildWorld(this.scene);
+    this.world = buildWorld(this.scene, { quality: this.settings.quality });
+    if (this.post) this.post.setScene(this.scene);
+    setPond(this.world.pond);
     this.effects = new Effects(this.scene);
     this.guards = this.world.guardDefs.map((d) => new Guard(this, d));
     this.decoys = [];
@@ -117,6 +124,22 @@ class Game {
       cards.appendChild(card);
     }
     $('btn-start').addEventListener('click', () => { initAudio(); this.showScreen('screen-select'); });
+    // Soft click on every button.
+    document.addEventListener('click', (e) => { if (e.target.closest('button, .card')) sfx('ui'); });
+    const onSetting = (key, value) => {
+      this.settings[key] = value;
+      saveSettings(this.settings);
+      if (key === 'quality') {
+        this.post.build(value);
+        // Grass, shadows and mist are baked into the world; rebuild it now if we're on a menu.
+        if (this.mode === 'menu') { this.disposeScene(); this.buildScene(); }
+        for (const id of ['settings-title', 'settings-pause']) renderSettings($(id), this.settings, onSetting);
+      } else {
+        initAudio();
+        setVolume(key, value);
+      }
+    };
+    for (const id of ['settings-title', 'settings-pause']) renderSettings($(id), this.settings, onSetting);
     $('btn-deploy').addEventListener('click', () => this.startMission());
     $('btn-resume').addEventListener('click', () => this.resume());
     $('btn-quit').addEventListener('click', () => this.toMenu());
@@ -373,18 +396,26 @@ class Game {
 
   frame() {
     const raw = Math.min(0.05, this.clock.getDelta());
+    this.elapsed = (this.elapsed || 0) + raw;
     if (this.mode === 'playing') this.update(raw);
     else if (this.mode === 'menu') this.menuCamera(raw);
-    if (this.mode !== 'paused') this.effects.update(raw * (this.timeScale || 1));
-    this.renderer.render(this.scene, this.camera);
+    if (this.mode !== 'paused') {
+      this.effects.update(raw * (this.timeScale || 1));
+      this.world.update(this.elapsed, raw);
+    }
+    if (this.mode === 'menu' || this.mode === 'result') setMusicState('menu');
+    setListener(this.camera.position, this.mode === 'playing' ? this.cam.yaw : 0);
+    this.hurtT = Math.max(0, this.hurtT - raw * 2.5);
+    this.post.render(this.elapsed, { sense: this.mode === 'playing' && this.senseTime > 0 ? 1 : 0, hurt: Math.min(1, this.hurtT) });
     this.input.endFrame();
   }
 
   menuCamera(dt) {
-    this.menuT = (this.menuT || 0) + dt * 0.05;
-    const r = 75;
-    this.camera.position.set(Math.sin(this.menuT) * r, 30, Math.cos(this.menuT) * r);
-    this.camera.lookAt(0, 4, -10);
+    // Slow cinematic drift around the compound.
+    this.menuT = (this.menuT || 0) + dt * 0.04;
+    const r = 62 + Math.sin(this.menuT * 0.7) * 10;
+    this.camera.position.set(Math.sin(this.menuT) * r, 20 + Math.sin(this.menuT * 1.3) * 6, Math.cos(this.menuT) * r);
+    this.camera.lookAt(0, 6, -14);
     for (const g of this.guards) g.update(dt);
   }
 
@@ -433,6 +464,13 @@ class Game {
       if (g.state === 'alert' && d < 40) anyAlert = true;
       if (d < 30) ki = Math.max(ki, (1 - d / 30) * 30, g.awareness);
     }
+    let suspicious = false;
+    for (const g of this.guards) {
+      if (!g.dead && (g.state === 'suspicious' || g.state === 'search') && g.pos.distanceTo(p.pos) < 40) suspicious = true;
+    }
+    setMusicState(!p.alive ? 'silent' : anyAlert ? 'alert' : suspicious || ki >= 35 ? 'tense' : 'calm');
+    if (p.hp < (this.lastHp ?? p.hp)) this.hurtT = 1;
+    this.lastHp = p.hp;
     const light = this.world.lightAt(p.center);
     let objective = 'Assassinate Lord Gōzan';
     if (this.lord && !this.lord.dead) objective += ` — ${Math.round(this.lord.pos.distanceTo(p.pos))}m (inner garden, behind the keep)`;
@@ -486,7 +524,7 @@ class Game {
           const mult = struck.state === 'alert' ? 1 : 2;
           struck.takeDamage(pr.damage * mult, from, { knock: 2 });
           this.effects.burst(struck.center, { count: 10, color: 0xb3121b, speed: 3, life: 0.4, size: 0.18, gravity: 10 });
-          sfx('hit');
+          sfx('hit', struck.center);
         } else {
           struck.takeDamage(pr.damage, from);
         }
@@ -495,7 +533,7 @@ class Game {
         if (pr.onImpact) { pr.onImpact(to); pr.life = 0; continue; }
         pr.stuck = true;
         pr.life = Math.min(pr.life, 6);
-        sfx('clank');
+        sfx('clank', to);
         if (pr.owner === 'player') this.makeNoise(to, 7);
       }
     }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { buildNinja, animateNinja } from './models.js';
 import { moveAndCollide, groundBelow, raycast } from './physics.js';
 import { JUTSU } from './jutsu.js';
-import { sfx } from './audio.js';
+import { sfx, footstep } from './audio.js';
 
 const GRAVITY = 30;
 const JUMP_V = 11;
@@ -21,7 +21,7 @@ export class Player {
     this.stats = character.stats;
     this.traits = character.traits || {};
 
-    const m = buildNinja(character.colors);
+    const m = buildNinja(character.colors, character.look);
     this.model = m;
     game.scene.add(m.group);
 
@@ -194,6 +194,7 @@ export class Player {
     const res = moveAndCollide(this.pos, this.half, this.height, this.vel.clone().multiplyScalar(dt), g.world.colliders);
     if (res.onGround) {
       if (this.vel.y < -18) { g.makeNoise(this.pos, 6); sfx('land'); g.effects.burst(this.pos, { count: 10, color: 0x9a8f7a, speed: 3, life: 0.5, size: 0.35, smoke: true, alpha: 0.5 }); }
+      if (!wasGrounded) footstep(this.surface(), this.vel.y < -12 ? 1.5 : 0.8);
       this.vel.y = 0;
     }
     if (res.hitCeiling && this.vel.y > 0) this.vel.y = 0;
@@ -202,14 +203,15 @@ export class Player {
     this.wallNormal = res.hitWall ? res.wallNormal : null;
     if (this.grapple && res.hitWall && !this.grounded) this.grapple.blocked += dt;
 
-    // ----- Noise from footsteps -----
+    // ----- Footsteps: sound for you, noise for the guards -----
     const hspeed = Math.hypot(this.vel.x, this.vel.z);
     if (this.grounded && hspeed > 1) {
       this.stepTimer -= dt;
       if (this.stepTimer <= 0) {
-        this.stepTimer = 0.3;
+        this.stepTimer = crouchNow ? 0.45 : this.sprinting ? 0.21 : 0.29;
         if (this.sprinting) g.makeNoise(this.pos, 8);
         else if (!crouchNow) g.makeNoise(this.pos, 3);
+        footstep(this.surface(), crouchNow ? 0.25 : this.sprinting ? 1 : 0.6);
       }
     }
 
@@ -259,6 +261,11 @@ export class Player {
 
     // Fell out of the world? Put them back at the start.
     if (this.pos.y < -20) { this.pos.copy(g.world.spawn.pos); this.vel.set(0, 0, 0); }
+  }
+
+  /** Ground material under the player (for footstep sounds). */
+  surface() {
+    return this.game.world.surfaceAt(this.pos, groundBelow(this.pos, this.half, this.game.world.colliders, 0.15));
   }
 
   // ---------------- Combat ----------------
