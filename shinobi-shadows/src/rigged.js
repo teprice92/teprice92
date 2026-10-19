@@ -185,11 +185,10 @@ export function createRigged(id, { height = 1.75, hue = 0, tint = null, width = 
   function attach(k, object) {
     const hand = bones['hand' + k] || bones['fore' + k];
     if (!hand) { root.add(object); return; }
+    // The skeleton is already in its rest pose (sync() ran at creation), so
+    // the prop just undoes the hand's current model-space rotation.
     group.updateMatrixWorld(true);
-    const handWorld = modelQuat(hand);
-    const rest = base['arm' + k] ? base['arm' + k].clone() : new THREE.Quaternion();
-    // world(object) = rest * handBind * q  ==  identity  =>  q = (rest * handBind)^-1
-    object.quaternion.copy(rest.multiply(handWorld).invert());
+    object.quaternion.copy(modelQuat(hand).invert());
     const ws = new THREE.Vector3();
     hand.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), ws);
     object.scale.setScalar(1 / ws.x);

@@ -499,9 +499,9 @@ export function makeBow() {
 // Generated, rigged models (see rigged.js) replace the primitive ones when present.
 const GUARD_MODELS = {
   sword: { id: 'guard', height: 1.85 },
-  archer: { id: 'guard', height: 1.85, hue: 2.1 }, // red armour recoloured green
+  archer: { id: 'guard', height: 1.85, hue: -2.1 }, // red armour recoloured green
   elite: { id: 'elite', height: 1.95 },
-  lord: { id: 'elite', height: 2.0, hue: -1.2, width: 1.25 }, // stockier, violet-lacquered
+  lord: { id: 'elite', height: 2.0, hue: 0.9, width: 1.25 }, // stockier, violet-lacquered
 };
 
 export function createNinjaModel(character) {

@@ -66,7 +66,17 @@ copies of them.
 
 ## Graphics and sound
 
-Nothing is loaded from image or audio files; it's all generated when the game starts.
+**3D characters**: the four shinobi and the guards are 3D models generated with
+[Higgsfield](https://higgsfield.ai): concept art in a T-pose, then image-to-3D with automatic
+humanoid rigging (`assets/models/*.glb`, about 1 MB each after compression). `src/rigged.js`
+drives their skeletons with the game's own procedural animation, so the Naruto run, crouching,
+slashes, hand seals and guard deaths all work without hand-made animation clips. One guard model
+is recoloured for the archers, and the elite model doubles as the Lord. If the model files are
+missing, the game falls back to characters built from simple shapes.
+`tools/fetch-models.sh` re-downloads the original models.
+
+Apart from those models, nothing is loaded from image or audio files; it's all generated when the
+game starts.
 
 - **Textures** (`textures.js`) are painted onto canvases: kawara roof tiles, plaster walls with
   timber frames and shoji screens that glow at night, castle stonework, wood, raked gravel, grass,
@@ -93,7 +103,8 @@ Nothing is loaded from image or audio files; it's all generated when the game st
 | `src/characters.js` | Character roster, stats and jutsu loadouts |
 | `src/world.js` | Level layout, lanterns, colliders and guard patrol routes |
 | `src/physics.js` | Axis-aligned box collision, raycasts and line of sight |
-| `src/models.js` | Characters built from primitives, with knees/elbows and procedural animation |
+| `src/models.js` | Procedural animation, primitive fallback characters, props and model selection |
+| `src/rigged.js` | Loads the rigged GLB characters and maps the animation onto their skeletons |
 | `src/effects.js` | GPU particles, shockwaves, lightning bolts, ? / ! markers |
 | `src/textures.js` | Procedural canvas textures |
 | `src/post.js` | Bloom, colour grading and quality presets |
