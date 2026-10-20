@@ -4,6 +4,7 @@ import { moveAndCollide, lineOfSight } from './physics.js';
 import { makeMarker } from './effects.js';
 import { turnToward } from './player.js';
 import { sfx, footstep, voice } from './audio.js';
+import { stateName } from './coop.js';
 
 const VIEW_SPHERE = new THREE.Sphere(new THREE.Vector3(), 1.4);
 let nextSlot = 0;
@@ -16,6 +17,8 @@ const TYPES = {
 };
 
 const SUSPICIOUS_AT = 25;
+const STATE_LIST = ['patrol', 'return', 'suspicious', 'search', 'alert'];
+const stateIndexOf = (s) => Math.max(0, STATE_LIST.indexOf(s));
 const ALERT_AT = 100;
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -139,6 +142,7 @@ export class Guard {
 
   /** Noise heard at a position (footsteps, combat, explosions). */
   hear(pos, radius) {
+    if (this.forward_('hear', [pos, radius])) return;
     if (this.dead || this.boundT > 0 || this.state === 'alert') return;
     const d = this.pos.distanceTo(pos);
     if (d > radius) return;
@@ -198,6 +202,7 @@ export class Guard {
   }
 
   loseTarget(decoyPos) {
+    if (this.forward_('loseTarget', [decoyPos])) return;
     if (this.dead) return;
     if (this.state === 'alert' || this.target) {
       this.target = null;
@@ -207,6 +212,7 @@ export class Guard {
   }
 
   bind(seconds) {
+    if (this.forward_('bind', [seconds])) this.bindGrace = 0.6; // until the host confirms
     this.boundT = seconds;
     this.attackT = -1;
     this.aimT = 0;
@@ -214,6 +220,7 @@ export class Guard {
 
   takeDamage(amount, fromPos, { knock = 3 } = {}) {
     if (this.dead) return;
+    if (this.forward_('takeDamage', [amount, fromPos, { knock }])) { this.flashT = 0.15; return; }
     this.hp -= amount;
     this.flashT = 0.15;
     if (fromPos) {
@@ -225,7 +232,7 @@ export class Guard {
     if (this.hp <= 0) { this.die(false); return; }
     this.attackT = -1;
     this.stunT = 0.35;
-    this.lastKnown = this.game.player.pos.clone();
+    this.lastKnown = (fromPos || this.game.player.pos).clone();
     if (this.boundT <= 0) {
       this.becomeAlert();
       // Face the attacker.
@@ -235,6 +242,7 @@ export class Guard {
 
   die(stealth) {
     if (this.dead) return;
+    const remote = this.forward_('die', [stealth]);
     this.dead = true;
     this.deadT = 0;
     this.boundT = 0;
@@ -243,12 +251,91 @@ export class Guard {
     voice(this.isLord ? 'lordDie' : 'die', this.pos, { force: true });
     const at = this.pos.clone();
     setTimeout(() => sfx('bodyFall', at), 650);
-    this.game.onGuardKilled(this, stealth);
+    if (!remote) this.game.onGuardKilled(this, stealth);
+  }
+
+  // ---------------- Co-op ----------------
+
+  /**
+   * In an online game the host runs the guards. On the guest's machine, things
+   * that change a guard are sent to the host instead; returns true when it did.
+   */
+  forward_(method, args) {
+    const g = this.game;
+    if (!g.net?.isGuest || g.mode !== 'playing') return false;
+    if (!this.fromHost) g.guardCall(this, method, args);
+    return true;
+  }
+
+  /** Host: compact state for the guest's copy. */
+  snapshot() {
+    const r = (v) => Math.round(v * 100) / 100;
+    return [r(this.pos.x), r(this.pos.y), r(this.pos.z), r(this.facing), stateIndexOf(this.state), Math.round(this.awareness),
+      r(this.attackT), this.aimT > 0 ? 1 : 0, r(this.boundT), Math.round(this.hp), this.dead ? 1 : 0, this.flashT > 0 ? 1 : 0,
+      r(this.speedNow), this.executing ? 1 : 0];
+  }
+
+  /** Guest: follow the host's snapshots instead of thinking for ourselves. */
+  updateRemote(dt) {
+    const s = this.netSnap;
+    if (this.flashT > 0) this.flashT -= dt;
+    if (this.boundT > 0) this.boundT -= dt;
+    if (s) {
+      const far = Math.hypot(s[0] - this.pos.x, s[2] - this.pos.z) > 5;
+      const k = far ? 1 : 1 - Math.exp(-dt * 12);
+      const before = this.pos.clone();
+      this.pos.x += (s[0] - this.pos.x) * k;
+      this.pos.y += (s[1] - this.pos.y) * k;
+      this.pos.z += (s[2] - this.pos.z) * k;
+      let d = s[3] - this.facing;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      this.facing += d * (far ? 1 : 1 - Math.exp(-dt * 14));
+      const state = stateName(s[4]);
+      if (state !== this.state && !this.dead) this.remoteStateCue(this.state, state);
+      this.state = state;
+      this.awareness = s[5];
+      if (s[6] >= 0.7 && this.attackT < 0.7 && this.attackT >= 0) sfx('swing', this.pos);
+      this.attackT = s[6];
+      this.aimT = s[7];
+      this.bindGrace = (this.bindGrace || 0) - dt;
+      if (s[8] > 0 || this.bindGrace <= 0) this.boundT = s[8];
+      this.hp = s[9];
+      if (s[11] && !this.netFlash) this.flashT = 0.15;
+      this.netFlash = !!s[11];
+      this.executing = !!s[13];
+      this.speedNow = this.dead ? 0 : s[12];
+      if (s[10] && !this.dead) { this.fromHost = true; this.die(false); this.fromHost = false; }
+      if (!s[10] && this.dead && this.deadT > 1.5) {
+        // We thought it died but the host disagrees (e.g. a missed hit): stand back up.
+        this.dead = false;
+        this.marker.visible = true;
+      }
+      if (!this.dead && this.speedNow > 0.6 && Math.abs(this.pos.y - before.y) < 0.2) {
+        this.stepT = (this.stepT || 0) - dt;
+        if (this.stepT <= 0) {
+          this.stepT = Math.max(0.28, 1.1 / (this.speedNow * 0.55 + 0.8));
+          footstep(this.game.world.surfaceAt(this.pos, null), 0.55, this.pos);
+        }
+      }
+    }
+    if (this.dead) this.deadT += dt;
+    this.syncModel(dt);
+  }
+
+  remoteStateCue(from, to) {
+    if (to === 'suspicious' && from !== 'search') { sfx('suspicious'); voice('who', this.pos); }
+    else if (to === 'alert') voice(this.isLord ? 'lordAlert' : 'intruder', this.pos, { force: true });
+    else if (to === 'return' && from === 'search') {
+      voice('wind', this.pos);
+      this.game.message('"Must have been the wind..."', 'muted');
+    }
   }
 
   // ---------------- Update ----------------
 
   update(dt) {
+    if (this.game.net?.isGuest && this.game.mode === 'playing') { this.updateRemote(dt); return; }
     if (this.dead) {
       this.deadT += dt;
       this.applyPhysics(dt, 0, 0, 0);
@@ -261,7 +348,7 @@ export class Guard {
       this.boundT -= dt;
       if (this.boundT <= 0) {
         this.awareness = 80;
-        this.lastKnown = this.game.player.pos.clone();
+        this.lastKnown = this.game.nearestTarget(this.pos).clone();
         this.startSearch(this.lastKnown, 8);
       }
       this.syncModel(dt);

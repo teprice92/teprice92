@@ -307,6 +307,7 @@ export class Player {
 
   takeDamage(amount, fromPos) {
     if (!this.alive || this.invuln > 0 || this.dash?.invuln) return;
+    this.game.pads?.rumble(0.6, 160);
     const dmg = amount * (this.traits.damageTaken || 1);
     this.hp -= dmg;
     this.game.stats.damageTaken += dmg;
@@ -326,6 +327,27 @@ export class Player {
       this.alive = false;
       this.game.onPlayerDeath();
     }
+  }
+
+  /** Back on your feet after your partner revives you. */
+  revive() {
+    this.alive = true;
+    this.hp = Math.round(this.maxHp * 0.4);
+    this.invuln = 2;
+    this.invulnBlink = true;
+    this.vel.set(0, 0, 0);
+    this.model.group.rotation.x = 0;
+    this.game.effects.burst(this.center, { count: 30, color: 0x6bff9a, speed: 3, life: 0.8, size: 0.3, up: 1.5 });
+    sfx('heal');
+  }
+
+  /** Downed: lie on the ground (the model is posed by the game while we're down). */
+  updateDowned(dt) {
+    const g = this.model.group;
+    g.rotation.order = 'YXZ';
+    g.rotation.x += (-1.45 - g.rotation.x) * (1 - Math.exp(-dt * 6));
+    g.position.set(this.pos.x, this.pos.y + 0.15, this.pos.z);
+    this.rope.visible = false;
   }
 
   throwKunai(cam) {
@@ -362,6 +384,7 @@ export class Player {
     if (this.cooldowns[i] > 0) return;
     if (this.chakra < j.cost) { this.game.message(`Not enough chakra for ${j.name}`); return; }
     if (j.cast(this.game, this, cam) === false) return;
+    this.game.net?.send({ t: 'cast', j: id });
     this.chakra -= j.cost;
     this.cooldowns[i] = j.cooldown;
     this.game.hud.jutsuFlash(i);

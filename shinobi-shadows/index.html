@@ -35,33 +35,126 @@
     <div id="prompt"></div>
     <div id="center-flash"></div>
     <div id="msg-log"></div>
+    <div id="partner-status" class="hidden"><span id="partner-kanji"></span><div><div id="partner-name"></div><div class="bar thin"><div id="partner-hp" class="fill hp"></div></div></div></div>
     <div id="damage-vignette"></div>
 
     <div id="hud-bottom">
       <div id="items">
-        <div class="item"><span class="key">Q</span> Kunai <b id="kunai-count">10</b></div>
-        <div class="item"><span class="key">G</span> Smoke <b id="smoke-count">3</b></div>
-        <div class="item"><span class="key">H</span> Pill <b id="pill-count">2</b></div>
+        <div class="item"><span class="key"><i class="kb">Q</i><i class="gp">RB</i></span> Kunai <b id="kunai-count">10</b></div>
+        <div class="item"><span class="key"><i class="kb">G</i><i class="gp">←</i></span> Smoke <b id="smoke-count">3</b></div>
+        <div class="item"><span class="key"><i class="kb">H</i><i class="gp">→</i></span> Pill <b id="pill-count">2</b></div>
       </div>
       <div id="jutsu-slots"></div>
     </div>
   </div>
 
   <!-- ===== Menus ===== -->
-  <div id="screen-title" class="screen">
+  <div id="screen-title" class="screen title-screen">
+    <div class="title-art"></div>
     <div class="title-wrap">
-      <div class="title-kanji">影の道</div>
-      <h1>SHINOBI SHADOWS</h1>
-      <p class="subtitle">A stealth-action shinobi tale</p>
-      <button id="btn-start" class="btn">Begin</button>
-      <p class="hint">Mouse &amp; keyboard, or touch on phones and tablets</p>
-      <div class="settings" id="settings-title"></div>
+      <div class="logo">
+        <div class="title-kanji">影の道</div>
+        <h1>SHINOBI SHADOWS</h1>
+        <p class="subtitle">A stealth-action shinobi tale</p>
+      </div>
+      <nav class="main-menu">
+        <button id="btn-start" class="btn menu-btn">Story Mission</button>
+        <button id="btn-coop" class="btn menu-btn">Online Co-op</button>
+        <button id="btn-settings" class="btn menu-btn ghost">Settings</button>
+        <button id="btn-controls" class="btn menu-btn ghost">Controls</button>
+      </nav>
+      <p class="hint" id="title-hint">Keyboard &amp; mouse, controller or touch</p>
     </div>
   </div>
 
-  <div id="screen-select" class="screen hidden">
-    <h2>Choose Your Shinobi</h2>
-    <div id="char-cards"></div>
+  <div id="screen-settings" class="screen hidden">
+    <div class="panel small">
+      <h2>Settings</h2>
+      <div class="settings" id="settings-title"></div>
+      <button class="btn ghost" data-back data-to="screen-title">Back</button>
+    </div>
+  </div>
+
+  <div id="screen-controls" class="screen hidden">
+    <div class="panel">
+      <h2>Controls</h2>
+      <div class="controls-cols">
+        <section>
+          <h3>Keyboard &amp; mouse</h3>
+          <div class="controls-grid">
+            <div><span class="key">WASD</span> Move</div>
+            <div><span class="key">Mouse</span> Look (click to lock)</div>
+            <div><span class="key">Shift</span> Shinobi sprint</div>
+            <div><span class="key">Shift</span> into a wall: run up it</div>
+            <div><span class="key">Space</span> Jump / double jump</div>
+            <div><span class="key">C</span> Crouch (quiet)</div>
+            <div><span class="key">LMB</span> Strike / 忍殺 stealth kill</div>
+            <div><span class="key">RMB / F</span> Grappling hook</div>
+            <div><span class="key">1 2 3</span> Jutsu</div>
+            <div><span class="key">Q G H</span> Kunai, smoke bomb, pill</div>
+            <div><span class="key">Esc</span> Pause</div>
+          </div>
+        </section>
+        <section>
+          <h3>Controller</h3>
+          <div class="controls-grid">
+            <div><span class="key">L-stick</span> Move, push fully to sprint</div>
+            <div><span class="key">R-stick</span> Look</div>
+            <div><span class="key">A</span> Jump / double jump</div>
+            <div><span class="key">X / RT</span> Strike / 忍殺</div>
+            <div><span class="key">B / LT</span> Grappling hook</div>
+            <div><span class="key">Y</span> Crouch</div>
+            <div><span class="key">LB + X Y B</span> Jutsu 1 2 3</div>
+            <div><span class="key">RB / ↑</span> Throw kunai</div>
+            <div><span class="key">← →</span> Smoke bomb, pill</div>
+            <div><span class="key">L3</span> Toggle sprint</div>
+            <div><span class="key">Start</span> Pause</div>
+          </div>
+        </section>
+        <section>
+          <h3>Touch</h3>
+          <div class="controls-grid">
+            <div><span class="key">Left thumb</span> Move, push to the edge to sprint</div>
+            <div><span class="key">Right thumb</span> Drag to look</div>
+            <div><span class="key">斬 跳 鉤 伏</span> Strike, jump, hook, crouch</div>
+            <div><span class="key">Tap HUD</span> Jutsu and items</div>
+          </div>
+        </section>
+      </div>
+      <button class="btn ghost" data-back data-to="screen-title">Back</button>
+    </div>
+  </div>
+
+  <div id="screen-coop" class="screen hidden">
+    <div class="panel small coop-panel">
+      <h2>Online Co-op</h2>
+      <p class="muted center">Infiltrate the castle together with one friend. One of you hosts, the other joins with the room code.</p>
+      <div id="coop-choose">
+        <button id="btn-host" class="btn">Host a Game</button>
+        <div class="join-row">
+          <input id="join-code" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+          <button id="btn-join" class="btn">Join</button>
+        </div>
+      </div>
+      <div id="coop-hosting" class="hidden">
+        <p class="muted center">Your room code</p>
+        <div id="room-code">····</div>
+        <p class="muted center">Send it to your partner. They choose Online Co-op → Join, or open your invite link.</p>
+        <button id="btn-share" class="btn ghost">Share Invite Link</button>
+      </div>
+      <p id="coop-status" class="center"></p>
+      <button class="btn ghost" data-back id="btn-coop-back">Back</button>
+    </div>
+  </div>
+
+  <div id="screen-select" class="screen hidden select-screen">
+    <div class="select-top">
+      <button class="btn ghost small-btn" data-back id="btn-select-back">‹ Back</button>
+      <h2>Choose Your Shinobi</h2>
+      <div id="select-partner"></div>
+    </div>
+    <div id="char-roster"></div>
+    <div id="char-detail"></div>
   </div>
 
   <div id="screen-briefing" class="screen hidden">
@@ -72,22 +165,8 @@
       <p><b>Objective:</b> Infiltrate the compound and assassinate Lord Gōzan.</p>
       <p class="muted">A true shinobi is never seen. Stay in the shadows, strike from behind,
         hide the evidence of your passing. Lanterns give you away.</p>
-      <div class="controls-grid">
-        <div><span class="key">WASD</span> Move</div>
-        <div><span class="key">Mouse</span> Look</div>
-        <div><span class="key">Shift</span> Shinobi sprint</div>
-        <div><span class="key">Space</span> Jump / double jump</div>
-        <div><span class="key">Shift</span> into a wall: run up it</div>
-        <div><span class="key">C</span> Crouch (quiet)</div>
-        <div><span class="key">LMB</span> Strike / 忍殺 stealth kill</div>
-        <div><span class="key">RMB / F</span> Grappling hook</div>
-        <div><span class="key">1 2 3</span> Jutsu</div>
-        <div><span class="key">Q</span> Throw kunai</div>
-        <div><span class="key">G</span> Smoke bomb</div>
-        <div><span class="key">H</span> Soldier pill</div>
-        <div><span class="key">Arrows</span> Turn the camera (if mouse lock is off)</div>
-        <div><span class="key">Esc</span> Pause</div>
-      </div>
+      <p id="briefing-coop" class="muted hidden"></p>
+      <button class="btn ghost" data-back data-to="screen-select">Back</button>
       <button id="btn-deploy" class="btn">Deploy</button>
     </div>
   </div>
@@ -95,9 +174,10 @@
   <div id="screen-pause" class="screen hidden">
     <div class="panel small">
       <h2>Paused</h2>
+      <p id="pause-coop" class="muted center hidden">Online game: the world keeps moving while you're here.</p>
       <div class="settings" id="settings-pause"></div>
       <p class="muted small-note">Grass, shadow and mist changes apply on the next mission.</p>
-      <button id="btn-resume" class="btn">Resume</button>
+      <button id="btn-resume" class="btn" data-back>Resume</button>
       <button id="btn-quit" class="btn ghost">Abandon Mission</button>
     </div>
   </div>
@@ -107,8 +187,10 @@
       <h2 id="result-title">Mission Complete</h2>
       <div id="result-rank"></div>
       <table id="result-stats"></table>
+      <p id="result-note" class="muted center"></p>
       <button id="btn-again" class="btn">Play Again</button>
       <button id="btn-menu" class="btn ghost">Change Shinobi</button>
+      <button id="btn-title" class="btn ghost">Main Menu</button>
     </div>
   </div>
 

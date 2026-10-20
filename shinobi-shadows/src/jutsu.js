@@ -33,7 +33,7 @@ export const JUTSU = {
         const ang = (i - (count - 1) / 2) * 0.9 + (Math.random() - 0.5) * 0.3;
         const dir = f.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), ang);
         const start = p.pos.clone().addScaledVector(dir, 0.8);
-        game.decoys.push(new Decoy(game, start, dir, p.char));
+        game.decoys.push(new Decoy(game, start, dir, p.char, { seed: Math.floor(Math.random() * 1e9) }));
         game.effects.smokePuff(start.clone().setY(start.y + 1), 0.6);
       }
       sfx('poof');
@@ -306,10 +306,20 @@ export const JUTSU = {
   },
 };
 
-/** A shadow clone: runs off on its own and draws guard attention. */
+let decoyCount = 0;
+
+/**
+ * A shadow clone: runs off on its own and draws guard attention. Its wandering
+ * is seeded so that in co-op both games run the same clone.
+ */
 export class Decoy {
-  constructor(game, pos, dir, character) {
+  constructor(game, pos, dir, character, { seed = 1, id = null } = {}) {
     this.game = game;
+    this.char = character;
+    this.seed = seed;
+    this.rng = mulberry(seed);
+    this.id = id || `${game.net?.role || 'solo'}-${decoyCount++}`;
+    if (!id) game.net?.send({ t: 'dc', id: this.id, c: character.id, p: [pos.x, pos.y, pos.z], d: [dir.x, dir.y, dir.z], s: seed });
     this.model = createNinjaModel(character);
     game.scene.add(this.model.group);
     this.pos = pos.clone();
@@ -320,7 +330,7 @@ export class Decoy {
     this.alive = true;
     this.isDecoy = true;
     this.visibility = 1.3;
-    this.turnT = 1 + Math.random();
+    this.turnT = 1 + this.rng();
   }
 
   get center() { return new THREE.Vector3(this.pos.x, this.pos.y + 1, this.pos.z); }
@@ -331,8 +341,8 @@ export class Decoy {
     if (this.life <= 0) { this.poof(); return; }
     this.turnT -= dt;
     if (this.turnT <= 0) {
-      this.turnT = 1 + Math.random() * 1.5;
-      const a = (Math.random() - 0.5) * 1.6;
+      this.turnT = 1 + this.rng() * 1.5;
+      const a = (this.rng() - 0.5) * 1.6;
       const speed = Math.hypot(this.vel.x, this.vel.z);
       const ang = Math.atan2(this.vel.x, this.vel.z) + a;
       this.vel.x = Math.sin(ang) * speed; this.vel.z = Math.cos(ang) * speed;
@@ -353,12 +363,22 @@ export class Decoy {
 
   takeDamage() { this.poof(); }
 
-  poof() {
+  poof(fromNet = false) {
     if (!this.alive) return;
     this.alive = false;
+    if (!fromNet && this.life > 0) this.game.net?.send({ t: 'dp', id: this.id });
     this.game.scene.remove(this.model.group);
     this.game.effects.smokePuff(this.center, 0.8);
     sfx('poof', this.pos);
     for (const g of this.game.guards) if (g.target === this) g.loseTarget(this.pos);
   }
+}
+
+function mulberry(a) {
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }

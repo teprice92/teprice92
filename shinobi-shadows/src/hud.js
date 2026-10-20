@@ -31,7 +31,7 @@ export class HUD {
       const el = document.createElement('div');
       el.className = 'jutsu';
       el.style.setProperty('--jc', j.color);
-      el.innerHTML = `<span class="slot-key">${i + 1}</span><div class="jk">${j.kanji}</div><div class="jn">${j.name}</div><div class="jc">${j.cost} chakra</div><div class="cd"></div>`;
+      el.innerHTML = `<span class="slot-key"><i class="kb">${i + 1}</i><i class="gp">LB+${'XYB'[i]}</i></span><div class="jk">${j.kanji}</div><div class="jn">${j.name}</div><div class="jc">${j.cost} chakra</div><div class="cd"></div>`;
       wrap.appendChild(el);
       return { el, cd: el.querySelector('.cd'), j };
     });
@@ -66,6 +66,24 @@ export class HUD {
     });
 
     if (objective !== this._obj) { this._obj = objective; this.objectiveEl.textContent = objective; }
+  }
+
+  /** Co-op: the partner's name and health, top left under your own bars. */
+  setPartner(remote) {
+    const el = $('partner-status');
+    el.classList.toggle('hidden', !remote);
+    if (!remote) return;
+    el.style.setProperty('--pc', remote.char.color);
+    $('partner-kanji').textContent = remote.char.kanji;
+    this.partnerName = $('partner-name');
+    this.partnerHp = $('partner-hp');
+  }
+
+  updatePartner(remote, note) {
+    if (!remote || !this.partnerHp) return;
+    this.partnerHp.style.width = `${Math.max(0, remote.hp / remote.maxHp) * 100}%`;
+    const text = `${remote.char.name.split(' ')[0].toUpperCase()}${note ? ` · ${note}` : ''}`;
+    if (text !== this._pn) { this._pn = text; this.partnerName.textContent = text; }
   }
 
   setPrompt(text) {

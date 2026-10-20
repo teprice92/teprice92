@@ -119,7 +119,8 @@ function updateMusicTracks() {
   const t = ctx.currentTime;
   // Tense falls back to the stealth track if only some exist; missing gameplay
   // tracks keep the generated score (the menu theme stays on the menus).
-  const want = hasTrack(musicState) ? musicState
+  // While a victory / defeat piece plays, the loops wait for it to finish.
+  const want = resultPlaying ? null : hasTrack(musicState) ? musicState
     : musicState === 'tense' && hasTrack('calm') ? 'calm' : null;
   for (const [state, tr] of Object.entries(tracks)) {
     if (state === 'victory' || state === 'defeat') continue;
@@ -128,9 +129,10 @@ function updateMusicTracks() {
     if (on && tr.el.paused) tr.el.play().catch(() => {});
     if (!on && !tr.el.paused) setTimeout(() => { if (tr.g.gain.value < 0.02) tr.el.pause(); }, 4000);
   }
-  fileMusicActive = !!want;
+  fileMusicActive = !!want || !!resultPlaying;
 }
 let fileMusicActive = false;
+let resultPlaying = null;
 
 /** One-shot result music (victory / defeat); returns false if there's no file. */
 function playResultTrack(state) {
@@ -140,6 +142,8 @@ function playResultTrack(state) {
   tr.g.gain.setTargetAtTime(1.6, ctx.currentTime, 0.05);
   tr.el.currentTime = 0;
   tr.el.play().catch(() => {});
+  resultPlaying = state;
+  tr.el.onended = () => { if (resultPlaying === state) { resultPlaying = null; updateMusicTracks(); } };
   fileMusicActive = true;
   return true;
 }
@@ -183,6 +187,13 @@ export function setListener(pos, yaw) { listener.x = pos.x; listener.y = pos.y; 
 export function setPond(pos) { pondPos = pos; }
 export function setMusicState(state) {
   if (state === musicState) return;
+  if (resultPlaying && state !== 'menu') {
+    // Back into a mission: cut the result music.
+    const tr = tracks[resultPlaying];
+    tr.g.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+    setTimeout(() => tr.el.pause(), 1500);
+    resultPlaying = null;
+  }
   musicState = state;
   music.step = 0;
   updateMusicTracks();
