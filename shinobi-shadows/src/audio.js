@@ -117,10 +117,10 @@ function hasTrack(state) { return !!tracks[state]; }
 function updateMusicTracks() {
   if (!ctx) return;
   const t = ctx.currentTime;
-  // Calm falls back to the menu track and tense to the alert track if only some exist.
+  // Tense falls back to the stealth track if only some exist; missing gameplay
+  // tracks keep the generated score (the menu theme stays on the menus).
   const want = hasTrack(musicState) ? musicState
-    : musicState === 'calm' && hasTrack('menu') ? 'menu'
-      : musicState === 'tense' && hasTrack('calm') ? 'calm' : null;
+    : musicState === 'tense' && hasTrack('calm') ? 'calm' : null;
   for (const [state, tr] of Object.entries(tracks)) {
     if (state === 'victory' || state === 'defeat') continue;
     const on = state === want;
