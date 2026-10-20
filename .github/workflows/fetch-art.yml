@@ -1,5 +1,5 @@
-# One-off helper: downloads the Higgsfield-generated title art, converts it to
-# web-sized JPEGs and commits it. Triggered by pushing this file.
+# One-off helper: downloads the Higgsfield-generated title art, commits it
+# (converted to JPEG afterwards). Triggered by pushing this file.
 name: Fetch title art
 
 on:
@@ -22,11 +22,8 @@ jobs:
           mkdir -p shinobi-shadows/assets/art
           cd shinobi-shadows/assets/art
           BASE=https://d8j0ntlcm91z4.cloudfront.net/user_3F3kQmi11cKqi7WdSoOxdUMXWue
-          curl -fSL --retry 3 -o a.png "$BASE/hf_20261020_030544_52f7139d-0ddc-49b4-88bc-b833fca4b1f2.png"
-          curl -fSL --retry 3 -o b.png "$BASE/hf_20261020_030544_5449c287-d3cf-4f44-84e9-9fe63a842565.png"
-          convert a.png -strip -quality 84 -interlace Plane title-a.jpg
-          convert b.png -strip -quality 84 -interlace Plane title-b.jpg
-          rm a.png b.png
+          curl -fSL --retry 3 -o title-a.png "$BASE/hf_20261020_030544_52f7139d-0ddc-49b4-88bc-b833fca4b1f2.png"
+          curl -fSL --retry 3 -o title-b.png "$BASE/hf_20261020_030544_5449c287-d3cf-4f44-84e9-9fe63a842565.png"
           ls -la
       - name: Commit
         run: |
