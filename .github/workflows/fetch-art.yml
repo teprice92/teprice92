@@ -22,8 +22,8 @@ jobs:
           mkdir -p shinobi-shadows/assets/art
           cd shinobi-shadows/assets/art
           BASE=https://d8j0ntlcm91z4.cloudfront.net/user_3F3kQmi11cKqi7WdSoOxdUMXWue
-          curl -fSL --retry 3 -o title-a.png "$BASE/hf_20261020_030544_52f7139d-0ddc-49b4-88bc-b833fca4b1f2.png"
-          curl -fSL --retry 3 -o title-b.png "$BASE/hf_20261020_030544_5449c287-d3cf-4f44-84e9-9fe63a842565.png"
+          curl -fSL --retry 3 -o title-c.png "$BASE/hf_20261020_031912_38a76c30-750a-4dd5-97ba-4dfb89703544.png"
+          curl -fSL --retry 3 -o title-d.png "$BASE/hf_20261020_031912_67598f07-a9e5-49ba-b96c-646645c30a69.png"
           ls -la
       - name: Commit
         run: |
