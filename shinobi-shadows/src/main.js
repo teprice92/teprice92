@@ -535,7 +535,7 @@ class Game {
         if (pr.onImpact) { pr.onImpact(to); pr.life = 0; continue; }
         pr.stuck = true;
         pr.life = Math.min(pr.life, 6);
-        sfx('clank', to);
+        sfx(pr.owner === 'player' ? 'kunaiHit' : 'clank', to);
         if (pr.owner === 'player') this.makeNoise(to, 7);
       }
     }

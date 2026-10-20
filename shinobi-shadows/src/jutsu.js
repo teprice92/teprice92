@@ -194,7 +194,7 @@ export const JUTSU = {
         game.effects.burst(at, { count: 30, color: 0x5a4a3a, speed: 5, life: 1.6, size: 1.6, smoke: true, alpha: 0.5, grow: 1.2, up: 1 });
         game.cam.shake(0.7);
         game.makeNoise(at, 22);
-        sfx('boom');
+        sfx('earth');
       });
     },
   },

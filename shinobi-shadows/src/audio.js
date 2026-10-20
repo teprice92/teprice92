@@ -46,6 +46,116 @@ export function initAudio() {
   startAmbience();
   music.next = ctx.currentTime + 0.3;
   scheduler = setInterval(tick, 50);
+  loadSamples();
+  loadMusic();
+}
+
+// ---------------- Recorded samples (ElevenLabs) and music (Suno) ----------------
+//
+// Recorded sounds live in assets/audio. Each one replaces its synthesised
+// counterpart once loaded; anything missing keeps the synthesised version.
+
+const SAMPLE_NAMES = {
+  sfx: ['swing', 'hit', 'clank', 'stealthKill', 'bodyFall', 'throw', 'kunaiHit', 'arrow', 'hurt', 'jump', 'land',
+    'grapple', 'poof', 'rasengan', 'lightning', 'fire', 'boom', 'earth', 'heal', 'shadow', 'seal', 'alert',
+    'suspicious', 'ambNight', 'ambPond', 'owl', 'stepGravel', 'stepGrass', 'stepWood', 'stepRoof'],
+  voice: ['who', 'noise', 'intruder', 'body', 'wind', 'die', 'lordAlert', 'lordDie'],
+};
+// Per-sample loudness trims (samples are normalised to the same loudness).
+const SAMPLE_GAIN = { swing: 0.7, hit: 0.8, throw: 0.8, jump: 0.45, land: 0.6, seal: 0.6, suspicious: 0.55, alert: 0.85, owl: 0.5, heal: 0.7 };
+const buffers = new Map();
+
+async function loadSamples() {
+  await Promise.all(Object.entries(SAMPLE_NAMES).flatMap(([dir, names]) => names.map(async (n) => {
+    try {
+      const res = await fetch(`assets/audio/${dir}/${n}.mp3`);
+      if (!res.ok) return;
+      buffers.set(`${dir}/${n}`, await ctx.decodeAudioData(await res.arrayBuffer()));
+      if (n === 'ambNight') startSampleAmbience();
+      if (n === 'ambPond') startPondLoop();
+    } catch { /* keep the synthesised sound */ }
+  })));
+}
+
+function playBuffer(buf, dest, t, { rate = 1, gain = 1, loop = false } = {}) {
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  src.loop = loop;
+  const g = ctx.createGain();
+  g.gain.value = gain;
+  src.connect(g).connect(dest);
+  src.start(t);
+  return { src, g };
+}
+
+// Music: loop one file per state, crossfading between them.
+const MUSIC_FILES = { menu: 'menu', calm: 'stealth', tense: 'tense', alert: 'alert', victory: 'victory', defeat: 'defeat' };
+const tracks = {};
+
+async function loadMusic() {
+  for (const [state, file] of Object.entries(MUSIC_FILES)) {
+    const url = `assets/audio/music/${file}.mp3`;
+    try {
+      const head = await fetch(url, { method: 'HEAD' });
+      if (!head.ok) continue;
+    } catch { continue; }
+    const el = new Audio(url);
+    el.loop = state !== 'victory' && state !== 'defeat';
+    el.preload = 'auto';
+    const node = ctx.createMediaElementSource(el);
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    node.connect(g).connect(musicBus);
+    tracks[state] = { el, g };
+  }
+  updateMusicTracks();
+}
+
+function hasTrack(state) { return !!tracks[state]; }
+
+function updateMusicTracks() {
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  // Calm falls back to the menu track and tense to the alert track if only some exist.
+  const want = hasTrack(musicState) ? musicState
+    : musicState === 'calm' && hasTrack('menu') ? 'menu'
+      : musicState === 'tense' && hasTrack('calm') ? 'calm' : null;
+  for (const [state, tr] of Object.entries(tracks)) {
+    if (state === 'victory' || state === 'defeat') continue;
+    const on = state === want;
+    tr.g.gain.setTargetAtTime(on ? 1.6 : 0, t, on ? 0.6 : 0.9);
+    if (on && tr.el.paused) tr.el.play().catch(() => {});
+    if (!on && !tr.el.paused) setTimeout(() => { if (tr.g.gain.value < 0.02) tr.el.pause(); }, 4000);
+  }
+  fileMusicActive = !!want;
+}
+let fileMusicActive = false;
+
+/** One-shot result music (victory / defeat); returns false if there's no file. */
+function playResultTrack(state) {
+  const tr = tracks[state];
+  if (!tr) return false;
+  for (const [k, o] of Object.entries(tracks)) if (k !== state) o.g.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+  tr.g.gain.setTargetAtTime(1.6, ctx.currentTime, 0.05);
+  tr.el.currentTime = 0;
+  tr.el.play().catch(() => {});
+  fileMusicActive = true;
+  return true;
+}
+
+// Guard voice lines, with a cooldown so they don't talk over each other.
+let voiceUntil = 0;
+export function voice(name, pos = null, { force = false } = {}) {
+  if (!ctx || ctx.state !== 'running') return;
+  const buf = buffers.get(`voice/${name}`);
+  if (!buf) return;
+  const t = ctx.currentTime;
+  if (!force && t < voiceUntil) return;
+  const sp = spatial(pos);
+  if (!sp) return;
+  voiceUntil = t + buf.duration * 0.8;
+  playBuffer(buf, out(sfxBus, { pan: sp.pan, send: sp.send, gain: Math.min(1, sp.gain * 1.6) }), t, { rate: 0.97 + Math.random() * 0.06 });
 }
 
 function impulse(seconds, decay) {
@@ -75,6 +185,7 @@ export function setMusicState(state) {
   if (state === musicState) return;
   musicState = state;
   music.step = 0;
+  updateMusicTracks();
 }
 
 // ---------------- Voice helpers ----------------
@@ -257,6 +368,11 @@ function startDrone() {
 
 function scheduleMusic(t) {
   const s = musicState;
+  if (fileMusicActive) {
+    // A recorded track is playing: keep the generative score quiet.
+    if (drone) drone.gain.gain.setTargetAtTime(0, t, 0.8);
+    return 0.5;
+  }
   const dest = out(musicBus, { send: 0.45, pan: (Math.random() - 0.5) * 0.8 });
   const walk = (lo, hi) => {
     music.degree = Math.max(lo, Math.min(hi, music.degree + Math.floor(Math.random() * 5) - 2));
@@ -327,9 +443,14 @@ function loopNoise(dest, { type, freq, q = 1, gain }) {
   return { f, g };
 }
 
+let synthAmb = null;
+
 function startAmbience() {
+  // All synthesised ambience goes through one gain so recorded ambience can replace it.
+  synthAmb = ctx.createGain();
+  synthAmb.connect(ambBus);
   // Wind: low rumble whose brightness drifts slowly.
-  const wind = loopNoise(out(ambBus, { send: 0.1 }), { type: 'lowpass', freq: 500, q: 0.7, gain: 0.07 });
+  const wind = loopNoise(out(synthAmb, { send: 0.1 }), { type: 'lowpass', freq: 500, q: 0.7, gain: 0.07 });
   const lfo = ctx.createOscillator();
   lfo.frequency.value = 0.05;
   const amt = ctx.createGain();
@@ -339,7 +460,7 @@ function startAmbience() {
   // Distant cricket field: narrow noise band pulsed rapidly.
   for (const pan of [-0.7, 0.7]) {
     // Base gain + square tremolo of the same depth = pulses between 0 and 2x.
-    const bed = loopNoise(out(ambBus, { pan, send: 0.3 }), { type: 'bandpass', freq: pan < 0 ? 4300 : 4700, q: 12, gain: 0.025 });
+    const bed = loopNoise(out(synthAmb, { pan, send: 0.3 }), { type: 'bandpass', freq: pan < 0 ? 4300 : 4700, q: 12, gain: 0.025 });
     const pulse = ctx.createOscillator();
     pulse.type = 'square';
     pulse.frequency.value = pan < 0 ? 17 : 21;
@@ -351,23 +472,45 @@ function startAmbience() {
   startDrone();
 }
 
-const amb = { cricket: 0, owl: 12, frog: 0 };
+const amb = { cricket: 0, owl: 12, frog: 0, pond: null };
+
+function startSampleAmbience() {
+  playBuffer(buffers.get('sfx/ambNight'), out(ambBus, { send: 0.05 }), ctx.currentTime, { loop: true, gain: 0.55 });
+  synthAmb.gain.setTargetAtTime(0.25, ctx.currentTime, 2); // keep a little synth texture underneath
+}
+
+function startPondLoop() {
+  const g = out(ambBus, { send: 0.2, gain: 0 });
+  playBuffer(buffers.get('sfx/ambPond'), g, ctx.currentTime, { loop: true, gain: 0.9 });
+  amb.pond = g;
+}
 
 function scheduleAmbience(now) {
   if (now >= amb.cricket) {
     amb.cricket = now + 0.15 + Math.random() * 0.7;
-    const d = out(ambBus, { pan: Math.random() * 2 - 1, send: 0.35 });
+    const d = out(synthAmb, { pan: Math.random() * 2 - 1, send: 0.35 });
     const f = 4200 + Math.random() * 900;
     const n = 2 + Math.floor(Math.random() * 3);
     for (let i = 0; i < n; i++) osc(d, now + i * 0.045, 0.025, { freq: f, gain: 0.03 + Math.random() * 0.02, attack: 0.004 });
   }
   if (now >= amb.owl) {
     amb.owl = now + 22 + Math.random() * 30;
+    const owlBuf = buffers.get('sfx/owl');
+    if (owlBuf) {
+      playBuffer(owlBuf, out(ambBus, { pan: Math.random() * 1.6 - 0.8, send: 0.7 }), now, { gain: 0.35, rate: 0.95 + Math.random() * 0.1 });
+      return;
+    }
     const d = out(ambBus, { pan: Math.random() * 1.6 - 0.8, send: 0.8, gain: 0.7 });
     const f = 360 + Math.random() * 40;
     osc(d, now, 0.5, { freq: f, freqEnd: f * 0.92, gain: 0.07, attack: 0.08 });
     osc(d, now + 0.7, 0.25, { freq: f * 1.02, freqEnd: f * 0.95, gain: 0.05, attack: 0.05 });
     osc(d, now + 1.0, 0.6, { freq: f, freqEnd: f * 0.9, gain: 0.07, attack: 0.08 });
+  }
+  if (amb.pond && pondPos) {
+    // Recorded frog loop: louder and panned as you approach the pond.
+    const sp = spatial(pondPos);
+    amb.pond.gain.setTargetAtTime(sp ? Math.min(1, sp.gain * 1.5) : 0, now, 0.3);
+    return;
   }
   if (pondPos && now >= amb.frog) {
     amb.frog = now + 0.4 + Math.random() * 1.6;
@@ -411,6 +554,12 @@ export function footstep(surface, intensity = 1, pos = null) {
   if (!sp) return;
   const t = ctx.currentTime;
   const d = out(sfxBus, { pan: sp.pan, send: sp.send * 0.5, gain: sp.gain * intensity });
+  const stepBuf = buffers.get(`sfx/${{ gravel: 'stepGravel', grass: 'stepGrass', wood: 'stepWood', roof: 'stepRoof', stone: 'stepGravel' }[surface] || 'stepGrass'}`);
+  if (stepBuf) {
+    // Vary pitch and level a little so repeated steps don't sound identical.
+    playBuffer(stepBuf, d, t, { rate: (surface === 'stone' ? 1.25 : 1) * (0.88 + Math.random() * 0.24), gain: 0.45 + Math.random() * 0.15 });
+    return;
+  }
   switch (surface) {
     case 'gravel':
       for (let i = 0; i < 5; i++) noise(d, t + i * (0.006 + Math.random() * 0.012), 0.014, { type: 'highpass', freq: 2200 + Math.random() * 1500, gain: 0.16 });
@@ -550,12 +699,21 @@ const SFX = {
 /** Play a sound effect, optionally at a world position (panned and attenuated). */
 export function sfx(name, pos = null) {
   if (!ctx || ctx.state !== 'running') return;
-  const fn = SFX[name];
-  if (!fn) return;
+  if (name === 'victory' && playResultTrack('victory')) return;
+  if (name === 'fail' && playResultTrack('defeat')) return;
   const sp = spatial(pos);
   if (!sp) return;
-  fn(out(sfxBus, { pan: sp.pan, send: sp.send, gain: sp.gain }), ctx.currentTime);
+  const dest = out(sfxBus, { pan: sp.pan, send: sp.send, gain: sp.gain });
+  const buf = buffers.get('sfx/' + name);
+  if (buf) {
+    playBuffer(buf, dest, ctx.currentTime, { rate: 0.94 + Math.random() * 0.12, gain: SAMPLE_GAIN[name] ?? 1 });
+    return;
+  }
+  const fn = SFX[name] || SFX[SFX_FALLBACK[name]];
+  if (fn) fn(dest, ctx.currentTime);
 }
+// Sounds that only exist as recordings borrow a synthesised one when missing.
+const SFX_FALLBACK = { bodyFall: 'land', kunaiHit: 'clank', earth: 'boom' };
 
 export function stopAudio() {
   if (scheduler) clearInterval(scheduler);

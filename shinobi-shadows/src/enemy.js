@@ -3,7 +3,7 @@ import { createGuardModel, animateGuard } from './models.js';
 import { moveAndCollide, lineOfSight } from './physics.js';
 import { makeMarker } from './effects.js';
 import { turnToward } from './player.js';
-import { sfx, footstep } from './audio.js';
+import { sfx, footstep, voice } from './audio.js';
 
 const TYPES = {
   sword: { hp: 100, walk: 2.4, run: 6.4, sight: 24, fov: 62, damage: 14, reach: 2.1, throws: true },
@@ -141,7 +141,7 @@ export class Guard {
     const amount = 35 + (1 - d / radius) * 45;
     if (amount > this.awareness) this.awareness = amount;
     this.lastKnown = pos.clone();
-    if (this.state === 'patrol' || this.state === 'return') this.becomeSuspicious();
+    if (this.state === 'patrol' || this.state === 'return') this.becomeSuspicious(true);
     else if (this.state === 'search') { this.searchPoint = pos.clone(); this.searchT = Math.max(this.searchT, 8); }
   }
 
@@ -157,6 +157,7 @@ export class Guard {
       this.awareness = Math.max(this.awareness, 75);
       this.lastKnown = other.pos.clone();
       this.startSearch(other.pos, 14);
+      voice('body', this.pos, { force: true });
       this.game.onBodyFound(this);
       return;
     }
@@ -164,8 +165,11 @@ export class Guard {
 
   // ---------------- State changes ----------------
 
-  becomeSuspicious() {
-    if (this.state !== 'suspicious') sfx('suspicious');
+  becomeSuspicious(heard = false) {
+    if (this.state !== 'suspicious') {
+      sfx('suspicious');
+      voice(heard ? 'noise' : 'who', this.pos);
+    }
     this.state = 'suspicious';
     this.suspiciousT = 0;
   }
@@ -176,7 +180,10 @@ export class Guard {
     this.state = 'alert';
     this.awareness = ALERT_AT;
     this.lostT = 0;
-    if (was !== 'alert') this.game.onGuardAlert(this, fromShout);
+    if (was !== 'alert') {
+      if (!fromShout) voice(this.isLord ? 'lordAlert' : 'intruder', this.pos, { force: true });
+      this.game.onGuardAlert(this, fromShout);
+    }
   }
 
   startSearch(point, time = 10) {
@@ -229,6 +236,9 @@ export class Guard {
     this.boundT = 0;
     this.marker.visible = false;
     this.cone.visible = false;
+    voice(this.isLord ? 'lordDie' : 'die', this.pos, { force: true });
+    const at = this.pos.clone();
+    setTimeout(() => sfx('bodyFall', at), 650);
     this.game.onGuardKilled(this, stealth);
   }
 
@@ -335,6 +345,7 @@ export class Guard {
         if (this.searchT <= 0) {
           this.state = 'return';
           this.awareness = 0;
+          voice('wind', this.pos);
           this.game.message('"Must have been the wind..."', 'muted');
           break;
         }
