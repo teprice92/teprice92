@@ -4,7 +4,9 @@ import { QUALITY } from './post.js';
 // when it's available.
 
 const KEY = 'shinobi-shadows-settings';
-const DEFAULTS = { quality: 'high', master: 0.8, music: 0.6, sfx: 0.9 };
+// Phones and tablets start on Medium.
+const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+const DEFAULTS = { quality: coarse ? 'medium' : 'high', master: 0.8, music: 0.6, sfx: 0.9 };
 
 export function loadSettings() {
   try {

@@ -14,6 +14,7 @@ import { MODEL_MANIFEST } from './models.js';
 import { initAudio, sfx, setVolume, setListener, setMusicState, setPond } from './audio.js';
 import { PostFX } from './post.js';
 import { loadSettings, saveSettings, renderSettings } from './settings.js';
+import { setupTouch, goFullscreen } from './touch.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -71,6 +72,7 @@ class Game {
     });
 
     this.buildMenus();
+    setupTouch(this);
     this.buildScene(); // backdrop for the menus
     this.post = new PostFX(this.renderer, this.scene, this.camera, this.settings.quality);
     this.hurtT = 0;
@@ -125,7 +127,7 @@ class Game {
       });
       cards.appendChild(card);
     }
-    $('btn-start').addEventListener('click', () => { initAudio(); this.showScreen('screen-select'); });
+    $('btn-start').addEventListener('click', () => { initAudio(); if (this.touch) goFullscreen(); this.showScreen('screen-select'); });
     // Soft click on every button.
     document.addEventListener('click', (e) => { if (e.target.closest('button, .card')) sfx('ui'); });
     const onSetting = (key, value) => {
@@ -187,7 +189,13 @@ class Game {
     this.mode = 'playing';
     this.clock.getDelta();
 
-    const tips = [
+    const tips = this.touch ? [
+      [0.5, 'Left thumb moves (push to the edge to sprint), right thumb looks.'],
+      [4.5, 'Stay out of lantern light. 伏 crouches to move silently.'],
+      [8.5, 'Get behind an unaware guard and tap 斬: 忍殺 stealth kill.'],
+      [12.5, 'Sprint into a wall to run up it. 鉤 fires your grappling hook. Tap a jutsu to cast it.'],
+      [16.5, 'Watch the KI meter (top right): it rises as guards sense you.'],
+    ] : [
       [0.5, 'Click to lock the mouse. WASD to move, Shift to sprint.'],
       [4.5, 'Stay out of lantern light. Crouch (C) to move silently.'],
       [8.5, 'Get behind an unaware guard and strike: 忍殺 stealth kill.'],
@@ -399,6 +407,11 @@ class Game {
   frame() {
     const raw = Math.min(0.05, this.clock.getDelta());
     this.elapsed = (this.elapsed || 0) + raw;
+    // View frustum (from last frame's camera) so distant or off-screen guards can animate less often.
+    this.frameNo = (this.frameNo || 0) + 1;
+    this.camera.updateMatrixWorld();
+    this.frustum = this.frustum || new THREE.Frustum();
+    this.frustum.setFromProjectionMatrix(VIEW_PROJ.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse));
     if (this.mode === 'playing') this.update(raw);
     else if (this.mode === 'menu') this.menuCamera(raw);
     if (this.mode !== 'paused') {
@@ -559,6 +572,8 @@ class Game {
     this.smokes = this.smokes.filter((s) => s.life > 0);
   }
 }
+
+const VIEW_PROJ = new THREE.Matrix4();
 
 // Load the 3D character models first; any that are missing fall back to the primitive look.
 const startBtn = $('btn-start');

@@ -20,11 +20,24 @@ python3 -m http.server 8000
 (`npx serve` or the VS Code "Live Server" extension work too.) Three.js and the add-ons it uses
 are bundled in `vendor/`, so it runs offline.
 
+### Playing it online (and on a phone)
+
+The repo can host the game itself with GitHub Pages: in the repository's **Settings → Pages**,
+set **Source** to *Deploy from a branch*, then pick the branch that has the game and the `/ (root)`
+folder. A minute later it's live at `https://<your-username>.github.io/<repo>/shinobi-shadows/`.
+
 **Settings** (title screen and pause menu): graphics quality (Low / Medium / High) and volume
 sliders for master, music and effects. Your choices are remembered. Drop to Medium or Low if the
 frame rate struggles. Low turns off bloom, shadows, grass and mist.
 
 ## Controls
+
+On a phone or tablet the touch controls switch on as soon as you touch the screen (landscape works
+best): the left thumb moves (push the stick to the edge to sprint), the right thumb drags to look,
+and the buttons are 斬 strike / stealth kill, 跳 jump, 鉤 grappling hook and 伏 crouch. Tap a jutsu
+or an item in the HUD to use it, and ❚❚ to pause.
+
+With a keyboard and mouse:
 
 | Key | Action |
 | --- | --- |
@@ -75,8 +88,18 @@ is recoloured for the archers, and the elite model doubles as the Lord. If the m
 missing, the game falls back to characters built from simple shapes.
 `tools/fetch-models.sh` re-downloads the original models.
 
-Apart from those models, nothing is loaded from image or audio files; it's all generated when the
-game starts.
+**Sound effects and voices** were generated with [ElevenLabs](https://elevenlabs.io)
+(`assets/audio/`): sword swings and clashes, kunai, jutsu, footsteps on each surface, a night
+ambience loop with crickets and wind, the pond, owls, and Japanese voice lines for the guards
+(「曲者だ！出会え、出会え！」 when they spot you, 「気のせいか…」 when they give up searching) and
+the Lord. Effects are panned and fade with distance.
+
+**Music**: drop MP3s into `assets/audio/music/` and they replace the generated score. That folder's
+README lists the file names and has a Suno prompt for each track.
+
+Every recorded sound has a synthesised fallback, so the game still works if a file is missing.
+Apart from the models and audio, nothing is loaded from files; textures and the rest are
+generated when the game starts.
 
 - **Textures** (`textures.js`) are painted onto canvases: kawara roof tiles, plaster walls with
   timber frames and shoji screens that glow at night, castle stonework, wood, raked gravel, grass,
@@ -86,11 +109,12 @@ game starts.
   the world red and grey.
 - **World life**: swaying grass, fireflies, falling cherry petals, drifting ground mist and clouds,
   and a rippling pond with lily pads.
-- **Sound** (`audio.js`): synthesised effects that are panned and fade with distance, footsteps that
-  change with the surface (grass, gravel, wood, roof tiles, stone, for you and the guards),
-  crickets, wind, owls and pond frogs, and a generative score on the Japanese *in* scale with koto
-  and shakuhachi. It turns tense when guards get suspicious and breaks into taiko drums when
-  you're spotted.
+- **Sound** (`audio.js`): footsteps that change with the surface (grass, gravel, wood, roof tiles,
+  stone, for you and the guards), and an adaptive score. Without music files it's generated on the
+  Japanese *in* scale with koto and shakuhachi. Either way it turns tense when guards get
+  suspicious and switches to battle music when you're spotted.
+- **Performance**: guards far away or off screen animate less often, and only nearby ones cast
+  shadows. Phones start on the Medium graphics preset.
 
 ## Code tour
 
@@ -108,7 +132,8 @@ game starts.
 | `src/effects.js` | GPU particles, shockwaves, lightning bolts, ? / ! markers |
 | `src/textures.js` | Procedural canvas textures |
 | `src/post.js` | Bloom, colour grading and quality presets |
-| `src/audio.js` | Synthesised effects, footsteps, ambience and the adaptive score |
+| `src/audio.js` | Sound effects (recorded, with synthesised fallbacks), voices, ambience and the adaptive music |
+| `src/touch.js` | Touch controls for phones and tablets |
 | `src/settings.js` | Graphics/volume settings UI and storage |
 | `src/camera.js`, `src/input.js`, `src/hud.js` | Camera, controls, HUD |
 

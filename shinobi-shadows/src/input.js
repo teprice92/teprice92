@@ -12,6 +12,10 @@ export class Input {
     this.locked = false;
     this.enabled = false;
     this.onUnlock = null;
+    // Analog movement from the touch joystick (-1..1), and its sprint flag.
+    this.moveX = 0;
+    this.moveY = 0;
+    this.touchSprint = false;
 
     window.addEventListener('keydown', (e) => {
       if (!this.enabled) return;

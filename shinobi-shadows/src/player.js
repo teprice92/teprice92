@@ -127,11 +127,12 @@ export class Player {
       if (input.down('KeyS')) wish.sub(f);
       if (input.down('KeyD')) wish.add(r);
       if (input.down('KeyA')) wish.sub(r);
+      wish.addScaledVector(f, input.moveY || 0).addScaledVector(r, input.moveX || 0);
     }
-    const hasInput = wish.lengthSq() > 0;
+    const hasInput = wish.lengthSq() > 0.01;
     if (hasInput) wish.normalize();
 
-    this.sprinting = input.down('ShiftLeft') || input.down('ShiftRight');
+    this.sprinting = input.down('ShiftLeft') || input.down('ShiftRight') || !!input.touchSprint;
     if (this.sprinting && hasInput) this.crouching = false;
     const crouchNow = wantCrouch && !this.sprinting && this.grounded;
     this.height = crouchNow ? 1.15 : this.standHeight;

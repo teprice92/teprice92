@@ -5,6 +5,9 @@ import { makeMarker } from './effects.js';
 import { turnToward } from './player.js';
 import { sfx, footstep, voice } from './audio.js';
 
+const VIEW_SPHERE = new THREE.Sphere(new THREE.Vector3(), 1.4);
+let nextSlot = 0;
+
 const TYPES = {
   sword: { hp: 100, walk: 2.4, run: 6.4, sight: 24, fov: 62, damage: 14, reach: 2.1, throws: true },
   archer: { hp: 70, walk: 2.0, run: 5.0, sight: 34, fov: 55, damage: 12, ranged: true },
@@ -55,6 +58,7 @@ export class Guard {
     this.half = 0.35;
     this.height = 1.85;
     this.isLord = def.type === 'lord';
+    this.animSlot = nextSlot++; // spreads throttled guards across frames
 
     this.model = createGuardModel(def.type);
     game.scene.add(this.model.group);
@@ -505,10 +509,45 @@ export class Guard {
     }
   }
 
+  /**
+   * How often to animate this guard: every frame up close, less often when
+   * it's far away or off screen, and not at all once a body has settled.
+   */
+  animInterval() {
+    const game = this.game;
+    if (this.dead && this.deadT > 3) return 0;
+    const d = game.camera.position.distanceTo(this.pos);
+    // Distant guards don't cast shadows (the shadow pass re-skins every mesh).
+    const shadows = d < 32;
+    if (shadows !== this.model.shadows) {
+      this.model.shadows = shadows;
+      this.model.group.traverse((o) => { if (o.isMesh) o.castShadow = shadows; });
+    }
+    if (d < 8) return 1;
+    VIEW_SPHERE.center.set(this.pos.x, this.pos.y + 1, this.pos.z);
+    if (game.frustum && !game.frustum.intersectsSphere(VIEW_SPHERE)) return 6;
+    return d < 26 ? 1 : d < 50 ? 2 : 4;
+  }
+
   syncModel(dt) {
     const g = this.model.group;
     g.position.copy(this.pos);
     g.rotation.y = this.facing;
+    // Throttled animation: accumulate time and pose on this guard's turn.
+    this.animDt = (this.animDt || 0) + dt;
+    const every = dt === 0 ? 1 : this.animInterval();
+    const turn = every > 0 && ((this.game.frameNo || 0) + this.animSlot) % every === 0;
+    if (turn) {
+      this.poseModel(this.animDt);
+      this.animDt = 0;
+    }
+    // Hit flash
+    const flash = this.flashT > 0 ? 0.8 : 0;
+    for (const m of this.model.materials) m.emissive.setRGB(flash, flash * 0.1, flash * 0.1);
+    this.updateMarker();
+  }
+
+  poseModel(dt) {
     animateGuard(this.model, {
       speed: this.speedNow,
       attackT: this.attackT,
@@ -518,11 +557,9 @@ export class Guard {
       bound: this.boundT > 0,
       alert: this.state === 'alert',
     }, dt);
+  }
 
-    // Hit flash
-    const flash = this.flashT > 0 ? 0.8 : 0;
-    for (const m of this.model.materials) m.emissive.setRGB(flash, flash * 0.1, flash * 0.1);
-
+  updateMarker() {
     if (this.dead) return;
     const m = this.marker.userData;
     if (this.executing) m.set('', '');
