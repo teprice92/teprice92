@@ -1,0 +1,1498 @@
+<!doctype html>
+<html lang="en" data-skin="xbox">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--ARTIFACT-START-->
+<title>Pour Decisions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;800&family=Saira+Condensed:wght@500;700;800&family=Saira:wght@400;600&family=VT323&family=Share+Tech+Mono&family=Limelight&family=Crimson+Pro:wght@400;600;700&family=Press+Start+2P&family=Nunito:wght@500;700;900&family=Pirata+One&family=IM+Fell+English:ital@0;1&display=swap">
+<style>
+/* Layout: sticky header (logo + skin switcher + tabs), then one view at a time.
+   Spin view = wheel left / turn + record panel right; stacks on phones.
+   Every skin is a self-contained visual world, so each one sets all of its tokens. */
+:root {
+  --bg: #070a07;
+  --bg-art: radial-gradient(1200px 600px at 80% -10%, rgba(16,124,16,.35), transparent 60%), radial-gradient(800px 500px at -10% 110%, rgba(16,124,16,.18), transparent 60%);
+  --panel: rgba(20, 28, 20, .82);
+  --panel-2: #121a12;
+  --fg: #eaf5ea;
+  --muted: #8fa98f;
+  --accent: #3fd13f;
+  --accent-fg: #031203;
+  --accent-2: #107c10;
+  --danger: #ff6b5e;
+  --line: rgba(63, 209, 63, .22);
+  --liquid: #7cff4f;
+  --liquid-2: #2fae1a;
+  --glass: rgba(220, 255, 220, .10);
+  --glass-edge: rgba(220, 255, 220, .55);
+  --font-display: "Exo 2", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Exo 2", "Segoe UI", system-ui, sans-serif;
+  --display-case: uppercase;
+  --display-track: .06em;
+  --display-weight: 800;
+  --radius: 14px;
+  --shadow: 0 0 0 1px var(--line), 0 18px 40px rgba(0,0,0,.45);
+  color-scheme: dark;
+}
+html[data-skin="playstation"] {
+  --bg: #00102e;
+  --bg-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160' fill='none' stroke='%23ffffff' stroke-opacity='.045' stroke-width='3'%3E%3Cpath d='M40 18 L58 48 L22 48 Z'/%3E%3Ccircle cx='120' cy='36' r='16'/%3E%3Cpath d='M26 106 L54 134 M54 106 L26 134'/%3E%3Crect x='104' y='104' width='30' height='30'/%3E%3C/svg%3E"), linear-gradient(160deg, #00286e 0%, #00102e 55%, #000a1f 100%);
+  --panel: rgba(4, 30, 80, .78);
+  --panel-2: #06245f;
+  --fg: #f2f6ff;
+  --muted: #9bb3e0;
+  --accent: #2f8cff;
+  --accent-fg: #ffffff;
+  --accent-2: #0050b8;
+  --danger: #ff5a78;
+  --line: rgba(130, 175, 255, .25);
+  --liquid: #57a5ff;
+  --liquid-2: #1755c9;
+  --glass: rgba(220, 235, 255, .10);
+  --glass-edge: rgba(220, 235, 255, .6);
+  --font-display: "Saira Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Saira", system-ui, sans-serif;
+  --display-case: uppercase;
+  --display-track: .08em;
+  --display-weight: 700;
+  --radius: 6px;
+  --shadow: 0 0 0 1px var(--line), 0 20px 50px rgba(0,8,30,.6);
+  color-scheme: dark;
+}
+html[data-skin="metalgear"] {
+  --bg: #010c06;
+  --bg-art: radial-gradient(900px 500px at 50% 0%, rgba(80, 255, 140, .10), transparent 70%), repeating-linear-gradient(90deg, rgba(80,255,140,.035) 0 1px, transparent 1px 48px), repeating-linear-gradient(0deg, rgba(80,255,140,.035) 0 1px, transparent 1px 48px);
+  --panel: rgba(3, 26, 13, .85);
+  --panel-2: #052414;
+  --fg: #b8ffcb;
+  --muted: #5fae78;
+  --accent: #5cff8f;
+  --accent-fg: #00140a;
+  --accent-2: #1d7a43;
+  --danger: #ff4d3d;
+  --line: rgba(92, 255, 143, .3);
+  --liquid: #c9ff6a;
+  --liquid-2: #6aa82a;
+  --glass: rgba(180, 255, 200, .07);
+  --glass-edge: rgba(150, 255, 180, .6);
+  --font-display: "VT323", "Courier New", monospace;
+  --font-body: "Share Tech Mono", "Courier New", monospace;
+  --display-case: uppercase;
+  --display-track: .1em;
+  --display-weight: 400;
+  --radius: 2px;
+  --shadow: 0 0 0 1px var(--line), 0 0 24px rgba(92,255,143,.12) inset;
+  color-scheme: dark;
+}
+html[data-skin="cards"] {
+  --bg: #0b3d23;
+  --bg-art: radial-gradient(1000px 700px at 50% 30%, rgba(40, 140, 80, .55), transparent 70%), repeating-radial-gradient(circle at 30% 30%, rgba(0,0,0,.05) 0 2px, transparent 2px 5px);
+  --panel: rgba(6, 40, 22, .86);
+  --panel-2: #08311b;
+  --fg: #f6eedb;
+  --muted: #b9c7a7;
+  --accent: #e2b84a;
+  --accent-fg: #2a1a00;
+  --accent-2: #b8282e;
+  --danger: #ff6b5e;
+  --line: rgba(226, 184, 74, .35);
+  --liquid: #e3962b;
+  --liquid-2: #9a5512;
+  --glass: rgba(255, 245, 220, .10);
+  --glass-edge: rgba(255, 240, 200, .6);
+  --font-display: "Limelight", Georgia, serif;
+  --font-body: "Crimson Pro", Georgia, serif;
+  --display-case: none;
+  --display-track: .02em;
+  --display-weight: 400;
+  --radius: 12px;
+  --shadow: 0 0 0 1px var(--line), 0 0 0 5px rgba(0,0,0,.18), 0 18px 40px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+html[data-skin="nintendo"] {
+  --bg: #f5f2ee;
+  --bg-art: radial-gradient(circle, rgba(230,0,18,.10) 2px, transparent 2.5px) 0 0 / 22px 22px;
+  --panel: #ffffff;
+  --panel-2: #fff3f1;
+  --fg: #1f1a1a;
+  --muted: #6d6262;
+  --accent: #e60012;
+  --accent-fg: #ffffff;
+  --accent-2: #0a7bd6;
+  --danger: #c70011;
+  --line: #1f1a1a;
+  --liquid: #ffc21a;
+  --liquid-2: #e88a00;
+  --glass: rgba(60, 120, 200, .08);
+  --glass-edge: rgba(30, 30, 40, .65);
+  --font-display: "Press Start 2P", "Courier New", monospace;
+  --font-body: "Nunito", system-ui, sans-serif;
+  --display-case: uppercase;
+  --display-track: 0;
+  --display-weight: 400;
+  --radius: 18px;
+  --shadow: 0 0 0 3px #1f1a1a, 6px 6px 0 3px #1f1a1a;
+  color-scheme: light;
+}
+html[data-skin="castlevania"] {
+  --bg: #0a0407;
+  --bg-art: radial-gradient(900px 600px at 50% -20%, rgba(150, 10, 30, .38), transparent 65%), radial-gradient(700px 500px at 100% 100%, rgba(70, 20, 90, .35), transparent 70%);
+  --panel: rgba(28, 10, 16, .86);
+  --panel-2: #1d0a10;
+  --fg: #f1e3d0;
+  --muted: #b08d86;
+  --accent: #d4a24c;
+  --accent-fg: #1a0a00;
+  --accent-2: #8f0f22;
+  --danger: #ff5c5c;
+  --line: rgba(212, 162, 76, .3);
+  --liquid: #b0061d;
+  --liquid-2: #5c0010;
+  --glass: rgba(255, 230, 220, .07);
+  --glass-edge: rgba(240, 210, 190, .5);
+  --font-display: "Pirata One", "Times New Roman", serif;
+  --font-body: "IM Fell English", Georgia, serif;
+  --display-case: none;
+  --display-track: .03em;
+  --display-weight: 400;
+  --radius: 4px;
+  --shadow: 0 0 0 1px var(--line), 0 0 0 4px rgba(0,0,0,.4), 0 20px 50px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background-color: var(--bg);
+  background-image: var(--bg-art);
+  background-attachment: fixed;
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+  transition: background-color .4s, color .4s;
+}
+html[data-skin="metalgear"] body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 100;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg);
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-track);
+  font-weight: var(--display-weight);
+  text-wrap: balance;
+  margin: 0;
+  line-height: 1.1;
+}
+html[data-skin="nintendo"] h2 { font-size: 15px; line-height: 1.5; }
+html[data-skin="nintendo"] h3 { font-size: 11px; line-height: 1.6; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.15rem; }
+.eyebrow { font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-family: var(--font-body); font-weight: 700; }
+.muted { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Header */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top-inner { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-block: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; margin-right: auto; }
+.brand svg { width: 52px; height: 52px; flex: none; }
+.brand-name { font-family: var(--font-display); font-size: 1.7rem; line-height: 1; text-transform: var(--display-case); letter-spacing: var(--display-track); font-weight: var(--display-weight); }
+html[data-skin="nintendo"] .brand-name { font-size: 15px; }
+html[data-skin="metalgear"] .brand-name { font-size: 2.1rem; }
+.brand-sub { font-size: .8rem; color: var(--muted); }
+.skins { display: flex; flex-wrap: wrap; gap: 6px; }
+.skin-btn {
+  font: 700 .72rem/1 var(--font-body); letter-spacing: .06em; text-transform: uppercase;
+  padding: 8px 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.skin-btn i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.skin-btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; width: 100%; }
+.tab {
+  font: 700 .95rem/1 var(--font-display); text-transform: var(--display-case); letter-spacing: var(--display-track);
+  background: none; border: 0; color: var(--muted); padding: 10px 14px; cursor: pointer; border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: 3px solid transparent;
+}
+html[data-skin="nintendo"] .tab { font-size: 10px; }
+html[data-skin="metalgear"] .tab { font-size: 1.3rem; }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.tab .badge { font-family: var(--font-body); font-size: .7rem; background: var(--accent); color: var(--accent-fg); border-radius: 999px; padding: 2px 7px; margin-left: 6px; vertical-align: 2px; letter-spacing: 0; }
+.tabs .spacer { flex: 1; }
+
+/* Generic pieces */
+main { padding-block: 24px; }
+.view { display: grid; gap: 20px; }
+.panel { background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; min-width: 0; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.stack { display: grid; gap: 12px; }
+.btn {
+  font: 700 .95rem/1 var(--font-body); cursor: pointer; border-radius: calc(var(--radius) * .7);
+  padding: 11px 16px; border: 1px solid var(--line); background: var(--panel-2); color: var(--fg);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px;
+  transition: transform .12s, background .2s, box-shadow .2s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.big { font-size: 1.15rem; padding: 16px 26px; min-height: 58px; font-family: var(--font-display); text-transform: var(--display-case); letter-spacing: var(--display-track); font-weight: var(--display-weight); }
+html[data-skin="nintendo"] .btn.big { font-size: 12px; }
+html[data-skin="metalgear"] .btn.big { font-size: 1.6rem; }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 50%, transparent); background: transparent; }
+.btn.small { padding: 7px 10px; min-height: 34px; font-size: .82rem; }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+html[data-skin="nintendo"] .btn { border: 3px solid #1f1a1a; box-shadow: 3px 3px 0 #1f1a1a; }
+html[data-skin="nintendo"] .btn:active { box-shadow: 0 0 0 #1f1a1a; transform: translate(3px,3px); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+input[type="text"], input[type="number"], select, textarea {
+  font: 500 1rem/1.3 var(--font-body); color: var(--fg); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: calc(var(--radius) * .6); padding: 9px 11px; width: 100%; min-width: 0;
+}
+html[data-skin="nintendo"] input[type="text"], html[data-skin="nintendo"] input[type="number"], html[data-skin="nintendo"] select, html[data-skin="nintendo"] textarea { border: 2px solid #1f1a1a; }
+label.field { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: .85rem; background: var(--panel-2); }
+.chip.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.note { border: 1px dashed var(--line); border-radius: var(--radius); padding: 10px 14px; font-size: .9rem; color: var(--muted); }
+
+/* Setup */
+.setup-head { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; justify-content: space-between; }
+.players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 16px; }
+.pcard { display: grid; gap: 10px; align-content: start; }
+.pcard-head { display: flex; gap: 8px; align-items: center; }
+.pcard-head .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+.pcard-head input { font-weight: 700; font-size: 1.05rem; }
+.games-list { display: grid; gap: 6px; counter-reset: g; margin: 0; padding: 0; list-style: none; }
+.games-list li { display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 6px; }
+.games-list li::before { counter-increment: g; content: counter(g); font-size: .78rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.games-list li.played input { text-decoration: line-through; opacity: .55; }
+.games-list input { padding: 7px 9px; font-size: .95rem; }
+
+/* Spin */
+.spin-layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .spin-layout { grid-template-columns: 1fr; } }
+.wheel-box { position: relative; width: 100%; max-width: 560px; margin: 0 auto; aspect-ratio: 1; }
+.wheel-box canvas { width: 100%; height: 100%; display: block; }
+.pointer {
+  position: absolute; left: 50%; top: -6px; width: 34px; height: 44px; transform: translateX(-50%); z-index: 2;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,.5)); transform-origin: 50% 10%;
+}
+.pointer svg { width: 100%; height: 100%; }
+.pointer.tick { animation: tick .12s ease-out; }
+@keyframes tick { 0% { transform: translateX(-50%) rotate(0); } 40% { transform: translateX(-50%) rotate(-14deg); } 100% { transform: translateX(-50%) rotate(0); } }
+.hub {
+  position: absolute; left: 50%; top: 50%; width: 22%; aspect-ratio: 1; transform: translate(-50%,-50%);
+  border-radius: 50%; border: 4px solid var(--accent); background: var(--panel-2); color: var(--fg); cursor: pointer;
+  font: 400 clamp(.8rem, 2.6vw, 1.2rem)/1 var(--font-display); text-transform: uppercase; letter-spacing: .06em;
+  box-shadow: 0 0 0 6px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.5);
+}
+html[data-skin="nintendo"] .hub { font-size: 10px; }
+.hub:disabled { cursor: wait; }
+.up-next { display: grid; gap: 6px; }
+.up-next .who { font-family: var(--font-display); font-size: clamp(2rem, 6vw, 3.2rem); line-height: 1; text-transform: var(--display-case); letter-spacing: var(--display-track); font-weight: var(--display-weight); color: var(--accent); overflow-wrap: anywhere; }
+html[data-skin="nintendo"] .up-next .who { font-size: clamp(16px, 4vw, 24px); line-height: 1.3; }
+.order { display: flex; flex-wrap: wrap; gap: 6px; }
+.order .chip.now { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 700; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg button { font: 600 .82rem/1 var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 8px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.landed { display: grid; gap: 14px; border: 2px solid var(--accent); animation: pop .45s cubic-bezier(.2,1.6,.4,1); }
+@keyframes pop { from { transform: scale(.92); opacity: .4; } to { transform: none; opacity: 1; } }
+.landed .game-title { font-family: var(--font-display); font-size: clamp(1.6rem, 4.5vw, 2.4rem); line-height: 1.05; text-transform: var(--display-case); letter-spacing: var(--display-track); font-weight: var(--display-weight); overflow-wrap: anywhere; }
+html[data-skin="nintendo"] .landed .game-title { font-size: 16px; line-height: 1.5; }
+.alert-mark { display: none; }
+html[data-skin="metalgear"] .alert-mark { display: inline-block; color: var(--danger); font-family: "VT323", monospace; font-size: 3rem; line-height: .7; text-shadow: 0 0 12px var(--danger); animation: blink .5s steps(2) 3; }
+@keyframes blink { 50% { opacity: 0; } }
+.winner-grid, .drink-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.pick { cursor: pointer; user-select: none; }
+.pick input { position: absolute; opacity: 0; pointer-events: none; }
+.pick span { display: inline-flex; align-items: center; gap: 6px; padding: 9px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); font-weight: 700; }
+.pick input:checked + span { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.pick input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.amounts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.amounts .amt { min-width: 52px; font-variant-numeric: tabular-nums; }
+.amounts .amt[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.stepper { display: inline-flex; align-items: center; gap: 4px; }
+.stepper input { width: 72px; text-align: center; }
+.drinker { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 6px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); }
+.drinker.off { opacity: .45; }
+.drinker label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 700; }
+.drinker .mini-amt { font-variant-numeric: tabular-nums; min-width: 2.2em; text-align: center; font-weight: 700; }
+.drinker button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; font-weight: 700; }
+
+/* Round log */
+.log { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.log li { display: grid; grid-template-columns: 2.4em minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.log li:first-child { border-top: 0; }
+.log .rn { font-family: var(--font-display); color: var(--muted); font-size: 1.1rem; }
+html[data-skin="nintendo"] .log .rn { font-size: 10px; }
+.log .what { min-width: 0; overflow-wrap: anywhere; }
+.log .shots { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent); text-align: right; }
+
+/* Scores */
+.score-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 16px; }
+.scard { display: grid; gap: 10px; justify-items: center; text-align: center; position: relative; }
+.scard .crown { position: absolute; top: 12px; right: 12px; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; background: var(--accent); color: var(--accent-fg); padding: 4px 8px; border-radius: 999px; font-weight: 700; }
+.scard .crown.alt { left: 12px; right: auto; background: var(--accent-2); color: #fff; }
+.scard .pname { font-family: var(--font-display); font-size: 1.5rem; text-transform: var(--display-case); letter-spacing: var(--display-track); font-weight: var(--display-weight); overflow-wrap: anywhere; }
+html[data-skin="nintendo"] .scard .pname { font-size: 13px; line-height: 1.5; }
+.scard .total { font-family: var(--font-display); font-size: 2.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+html[data-skin="nintendo"] .scard .total { font-size: 22px; }
+.glass-big { width: 120px; height: 156px; }
+.minis { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; min-height: 30px; }
+.minis svg { width: 22px; height: 29px; }
+.minis .more { font-size: .8rem; color: var(--muted); align-self: center; }
+.stat-row { display: flex; gap: 16px; justify-content: center; font-size: .9rem; color: var(--muted); }
+.stat-row b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.penalty { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+
+/* Glass SVG */
+.glass .wave { animation: wave 2.4s linear infinite; }
+.glass.static .wave { animation: none; }
+.glass .liq { transition: transform 1.1s cubic-bezier(.3,.8,.3,1); }
+@keyframes wave { to { transform: translateX(-50px); } }
+.glass .bub { animation: bub 2.8s ease-in infinite; opacity: 0; }
+.glass .bub:nth-child(3) { animation-delay: .9s; }
+.glass .bub:nth-child(4) { animation-delay: 1.7s; }
+@keyframes bub { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .8; } 100% { transform: translateY(-70px); opacity: 0; } }
+
+/* History */
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+td.n, th.n { text-align: right; }
+details.night { border-top: 1px solid var(--line); padding-block: 10px; }
+details.night summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; list-style: none; }
+details.night summary::-webkit-details-marker { display: none; }
+details.night summary::before { content: "▸"; color: var(--accent); transition: transform .2s; }
+details.night[open] summary::before { transform: rotate(90deg); }
+details.night .body { padding: 10px 0 0 18px; display: grid; gap: 10px; }
+.hist-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .hist-grid { grid-template-columns: 1fr; } }
+
+/* Overlay: pour + chaos roll */
+.overlay {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(6px);
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  overflow-y: auto;
+}
+.pour-card { display: grid; justify-items: center; gap: 10px; text-align: center; max-width: 440px; cursor: pointer; }
+.pour-card .glass { width: 200px; height: 260px; }
+.pour-card .count { font-family: var(--font-display); font-size: 4rem; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
+html[data-skin="nintendo"] .pour-card .count { font-size: 34px; }
+.pour-card .who { font-size: 1.15rem; }
+.pour-card .quip { font-style: italic; color: var(--muted); }
+.modal { width: min(640px, 100%); display: grid; gap: 16px; }
+.modal-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.rng-stage { display: grid; place-items: center; min-height: 320px; position: relative; perspective: 900px; }
+.rng-stage .wheel-box { max-width: 320px; }
+.rng-result { text-align: center; font-family: var(--font-display); font-size: 1.1rem; min-height: 1.5em; }
+.rng-result b { font-size: 2.4rem; color: var(--accent); display: block; line-height: 1.1; }
+html[data-skin="nintendo"] .rng-result b { font-size: 24px; }
+.rng-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; align-items: end; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.coin { width: 170px; height: 170px; position: relative; transform-style: preserve-3d; }
+.coin .face {
+  position: absolute; inset: 0; border-radius: 50%; display: grid; place-items: center; backface-visibility: hidden;
+  font: 400 3.4rem/1 var(--font-display); color: var(--accent-fg);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 60%, #fff), var(--accent) 55%, color-mix(in srgb, var(--accent) 60%, #000));
+  box-shadow: inset 0 0 0 8px color-mix(in srgb, var(--accent) 70%, #000), inset 0 0 0 12px color-mix(in srgb, var(--accent) 80%, #fff);
+}
+.coin .face small { display: block; font-size: .8rem; letter-spacing: .2em; font-family: var(--font-body); font-weight: 700; margin-top: 4px; }
+.coin .face > div { text-align: center; }
+html[data-skin="nintendo"] .coin .face { font-size: 26px; }
+.coin .back { transform: rotateX(180deg); }
+.die { width: 130px; height: 130px; position: relative; transform-style: preserve-3d; }
+.die .f {
+  position: absolute; inset: 0; display: grid; place-items: center; border-radius: 18%;
+  font: 400 3rem/1 var(--font-display); background: var(--panel-2); color: var(--fg);
+  border: 3px solid var(--accent); box-shadow: inset 0 0 24px rgba(0,0,0,.35);
+}
+html[data-skin="nintendo"] .die .f { font-size: 22px; }
+.die .f1 { transform: translateZ(65px); }
+.die .f2 { transform: rotateY(180deg) translateZ(65px); }
+.die .f3 { transform: rotateY(90deg) translateZ(65px); }
+.die .f4 { transform: rotateY(-90deg) translateZ(65px); }
+.die .f5 { transform: rotateX(90deg) translateZ(65px); }
+.die .f6 { transform: rotateX(-90deg) translateZ(65px); }
+.ticker { font: 400 6rem/1 var(--font-display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.rolls { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: .9rem; }
+.rolls li { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); padding-top: 4px; }
+.rolls li span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.toast {
+  position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 60;
+  background: var(--accent); color: var(--accent-fg); padding: 10px 16px; border-radius: 999px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  max-width: calc(100% - 32px);
+}
+.empty { text-align: center; padding: 30px 10px; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
+footer { text-align: center; font-size: .8rem; color: var(--muted); padding-top: 20px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <!-- Logo: a shot glass whose liquid is a prize wheel, mid-pour -->
+        <defs>
+          <clipPath id="logoClip"><path d="M14 14 L50 14 L45 52 L19 52 Z"/></clipPath>
+        </defs>
+        <g clip-path="url(#logoClip)">
+          <rect x="0" y="24" width="64" height="40" fill="var(--liquid)"/>
+          <g transform="translate(32 38)">
+            <path d="M0 0 L0 -14 A14 14 0 0 1 12.1 -7 Z" fill="var(--liquid-2)"/>
+            <path d="M0 0 L12.1 7 A14 14 0 0 1 0 14 Z" fill="var(--liquid-2)"/>
+            <path d="M0 0 L-12.1 7 A14 14 0 0 1 -12.1 -7 Z" fill="var(--liquid-2)"/>
+            <circle r="3" fill="var(--fg)"/>
+          </g>
+        </g>
+        <path d="M11 10 L53 10 L47 54 L17 54 Z" fill="none" stroke="var(--fg)" stroke-width="3" stroke-linejoin="round"/>
+        <rect x="16" y="54" width="32" height="5" rx="1.5" fill="var(--fg)"/>
+        <path d="M32 4 L28 10 L36 10 Z" fill="var(--accent)"/>
+        <circle cx="54" cy="22" r="2.4" fill="var(--liquid)"/>
+        <path d="M52 16 q2 3 2 5" stroke="var(--liquid)" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="brand-name">Pour Decisions</div>
+        <div class="brand-sub" id="tagline">Bet list night</div>
+      </div>
+    </div>
+    <div class="skins" id="skins" role="group" aria-label="Theme"></div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-tab="setup" id="tab-setup">Lineup</button>
+      <button class="tab" role="tab" data-tab="spin" id="tab-spin">Spin</button>
+      <button class="tab" role="tab" data-tab="scores" id="tab-scores">Shots</button>
+      <button class="tab" role="tab" data-tab="history" id="tab-history">History</button>
+      <span class="spacer"></span>
+      <button class="btn small primary" id="openRng" type="button">Chaos roll</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="view" id="view-setup" hidden></section>
+
+  <section class="view" id="view-spin" hidden>
+    <div class="spin-layout">
+      <div class="panel">
+        <div class="wheel-box" id="mainWheelBox">
+          <div class="pointer" id="mainPointer"><svg viewBox="0 0 34 44"><path d="M17 42 L3 6 Q17 -2 31 6 Z" fill="var(--accent)" stroke="var(--fg)" stroke-width="2.5" stroke-linejoin="round"/></svg></div>
+          <canvas id="mainWheel"></canvas>
+          <button class="hub" id="hubSpin" type="button" aria-label="Spin the wheel">Spin</button>
+        </div>
+        <div class="row" style="justify-content:center;margin-top:12px" id="poolCtl"></div>
+      </div>
+      <div class="stack" id="spinSide"></div>
+    </div>
+    <div class="panel" id="roundLog"></div>
+  </section>
+
+  <section class="view" id="view-scores" hidden></section>
+  <section class="view" id="view-history" hidden></section>
+  <footer>Pour Decisions saves everything in this browser. Back it up from History. Drink responsibly and get a ride home.</footer>
+</main>
+
+<div class="overlay" id="pour" hidden>
+  <div class="pour-card" id="pourCard" role="status" aria-live="polite"></div>
+</div>
+
+<div class="overlay" id="rng" hidden>
+  <div class="panel modal" role="dialog" aria-modal="true" aria-labelledby="rngTitle">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow">Alterations, tiebreaks, punishments</div>
+        <h2 id="rngTitle">Chaos roll</h2>
+      </div>
+      <button class="btn small ghost" id="closeRng" type="button">Close</button>
+    </div>
+    <div class="row">
+      <div class="seg" id="rngMode" role="group" aria-label="Roll style">
+        <button type="button" data-mode="wheel">Wheel</button>
+        <button type="button" data-mode="coin">Coin</button>
+        <button type="button" data-mode="die">Die</button>
+      </div>
+      <div class="presets" id="rngPresets"></div>
+    </div>
+    <div class="rng-form">
+      <label class="field">Min <input type="number" id="rngMin" step="1" value="1"></label>
+      <label class="field">Max <input type="number" id="rngMax" step="1" value="6"></label>
+      <label class="field" style="grid-column: span 2">What's it for? (optional) <input type="text" id="rngNote" placeholder="e.g. seconds you have to play left-handed"></label>
+    </div>
+    <div class="rng-stage" id="rngStage"></div>
+    <div class="rng-result" id="rngResult" aria-live="polite"></div>
+    <button class="btn big primary" id="rngGo" type="button">Roll it</button>
+    <div id="rngLog"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Skins ----------
+  const SKINS = {
+    xbox: {
+      label: "Xbox", dot: "#3fd13f",
+      tagline: "Bet list night · Achievement hunting, one shot at a time",
+      wheel: ["#107c10", "#1b1f1b", "#3fd13f", "#2c332c", "#0b5e0b", "#9bf09b"],
+      landed: "Achievement unlocked", spin: "Spin",
+      quips: ["+50G for hydration later.", "Gamerscore: liquid.", "Rare achievement: still standing."],
+    },
+    playstation: {
+      label: "PlayStation", dot: "#2f8cff",
+      tagline: "Bet list night · Press ✕ to drink",
+      wheel: ["#2f8cff", "#3eb489", "#ff4f6d", "#e48fd0", "#0a3a8c", "#f2f6ff"],
+      landed: "Trophy earned", spin: "Spin",
+      quips: ["Trophy: Bottoms Up (Bronze).", "Press ✕ to continue.", "Platinum liver pending."],
+    },
+    metalgear: {
+      label: "Metal Gear", dot: "#5cff8f",
+      tagline: "Bet list night · Codec 140.85 · Tactical drinking action",
+      wheel: ["#0f4a2a", "#5cff8f", "#06281a", "#9fd36b", "#1d7a43", "#3a5f2a"],
+      landed: "Snake? SNAKE?!", spin: "Spin",
+      quips: ["Kept you waiting, huh?", "It's a ration. Probably.", "Brother… you drink too."],
+    },
+    cards: {
+      label: "Card night", dot: "#e2b84a",
+      tagline: "Bet list night · House rules, house pours",
+      wheel: ["#b8282e", "#141414", "#e2b84a", "#f6eedb", "#0f5a33", "#7a1b1f"],
+      landed: "The dealer has spoken", spin: "Deal",
+      quips: ["The house always pours.", "Read 'em and drink.", "All in."],
+    },
+    nintendo: {
+      label: "Nintendo", dot: "#e60012",
+      tagline: "Bet list night · It's-a me, another shot",
+      wheel: ["#e60012", "#ffffff", "#0a7bd6", "#ffc21a", "#36b030", "#1f1a1a"],
+      landed: "Here we go!", spin: "Spin",
+      quips: ["Thank you! But your shot is in another castle.", "Wahoo!", "1-UP. Glass is refilled."],
+    },
+    castlevania: {
+      label: "Castlevania", dot: "#b0061d",
+      tagline: "Bet list night · A miserable little pile of shots",
+      wheel: ["#5c0010", "#d4a24c", "#2a0f33", "#8f0f22", "#f1e3d0", "#1d0a10"],
+      landed: "Die monster, you don't belong in this world", spin: "Spin",
+      quips: ["What is a man? A miserable little pile of shots.", "Have at you!", "The night is young, and so is your liver."],
+    },
+  };
+
+  // ---------- Utilities ----------
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const randInt = (n) => Math.floor((crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) * n);
+  const pickOne = (arr) => arr[randInt(arr.length)];
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const q4 = (n) => Math.max(0, Math.round(n * 4) / 4);
+  const fmtShots = (n) => {
+    n = q4(n);
+    const whole = Math.floor(n);
+    const frac = ["", "¼", "½", "¾"][Math.round((n - whole) * 4)];
+    if (!whole && !frac) return "0";
+    return (whole ? String(whole) : "") + frac;
+  };
+  const fmtDate = (t) => new Date(t).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- State ----------
+  const STORE = "pourDecisions.v1";
+  const SAMPLE = [
+    ["Alex", ["Halo 3 slayer", "Gears of War 2 horde", "Forza Horizon 5 race", "Rocket League 1v1", "Mario Kart 8", "Smash Bros. Ultimate", "Tetris 99", "Uno", "Speed (cards)", "Tekken 8"]],
+    ["Jordan", ["Gran Turismo 7", "Street Fighter 6", "Crash Team Racing", "Metal Gear Online", "Castlevania: SotN boss rush", "Poker hand", "Blackjack", "Goldeneye 007", "Wii Sports bowling", "Mortal Kombat 1"]],
+    ["Sam", ["Mario Party minigame", "Overcooked 2", "Call of Duty gunfight", "NBA 2K", "Tekken 3", "War (cards)", "Egyptian Ratscrew", "Super Mario Bros. speedrun", "Bloodborne boss", "FIFA penalty shootout"]],
+  ];
+  const mkPlayer = (name, titles = [], per = 10) => ({
+    id: uid(), name,
+    games: Array.from({ length: per }, (_, i) => ({ id: uid(), title: titles[i] || "" })),
+  });
+  const newNight = (players, sample = false) => ({
+    id: uid(), created: Date.now(), started: null, sample, perPlayer: 10, pool: "all",
+    turn: 0, players, rounds: [], rolls: [], pending: null,
+  });
+  const fresh = () => ({
+    skin: "xbox", tab: "setup", sound: true,
+    night: newNight(SAMPLE.map(([n, g]) => mkPlayer(n, g)), true),
+    archive: [],
+  });
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      if (!s || !s.night) return null;
+      return Object.assign(fresh(), s);
+    } catch { return null; }
+  }
+  let S = load() || fresh();
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify(S)); } catch { /* storage blocked: keep running in memory */ }
+  }
+
+  // ---------- Derived data ----------
+  const N = () => S.night;
+  const playerById = (id, night = N()) => night.players.find((p) => p.id === id);
+  const allGames = (night = N()) => night.players.flatMap((p) => p.games.filter((g) => g.title.trim()).map((g) => ({ id: g.id, title: g.title.trim(), by: p.id })));
+  const playedIds = (night = N()) => new Set(night.rounds.filter((r) => r.gameId).map((r) => r.gameId));
+  const remaining = (night = N()) => { const done = playedIds(night); return allGames(night).filter((g) => !done.has(g.id)); };
+  const spinner = () => N().players.length ? N().players[N().turn % N().players.length] : null;
+  function totals(night = N()) {
+    const t = {};
+    night.players.forEach((p) => (t[p.id] = { shots: 0, wins: 0 }));
+    night.rounds.forEach((r) => {
+      if (r.winner && t[r.winner]) t[r.winner].wins++;
+      (r.drinks || []).forEach((d) => { if (t[d.pid]) t[d.pid].shots += d.amt; });
+    });
+    return t;
+  }
+  function wheelPool() {
+    const rem = remaining();
+    if (N().pool === "own" && spinner()) {
+      const own = rem.filter((g) => g.by === spinner().id);
+      if (own.length) return { list: own, fallback: false };
+      return { list: rem, fallback: rem.length > 0 };
+    }
+    return { list: rem, fallback: false };
+  }
+
+  // ---------- Sound (tiny synth, starts after a click) ----------
+  let actx = null;
+  function blip(freq = 900, dur = 0.03, type = "square", vol = 0.05) {
+    if (!S.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+      o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + dur);
+    } catch { /* audio unavailable */ }
+  }
+  const fanfare = () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(f, 0.12, "triangle", 0.06), i * 90));
+
+  // ---------- Wheel ----------
+  class Wheel {
+    constructor(canvas, pointer) {
+      this.cv = canvas; this.ctx = canvas.getContext("2d"); this.pointer = pointer;
+      this.items = []; this.rot = 0; this.spinning = false;
+      new ResizeObserver(() => this.resize()).observe(canvas);
+    }
+    resize() {
+      const w = this.cv.clientWidth; if (!w) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      this.cv.width = this.cv.height = Math.round(w * dpr);
+      this.draw();
+    }
+    setItems(items) { this.items = items; this.draw(); }
+    draw() {
+      const c = this.ctx, W = this.cv.width; if (!W) return;
+      const css = getComputedStyle(document.documentElement);
+      const fg = css.getPropertyValue("--fg").trim(), line = css.getPropertyValue("--accent").trim();
+      const bodyFont = css.getPropertyValue("--font-body").trim();
+      const R = W / 2 - W * 0.03, n = this.items.length;
+      c.clearRect(0, 0, W, W);
+      c.save(); c.translate(W / 2, W / 2);
+      // rim
+      c.beginPath(); c.arc(0, 0, R + W * 0.022, 0, Math.PI * 2); c.fillStyle = line; c.fill();
+      if (!n) {
+        c.beginPath(); c.arc(0, 0, R, 0, Math.PI * 2); c.fillStyle = css.getPropertyValue("--panel-2").trim(); c.fill();
+        c.restore(); return;
+      }
+      const seg = (Math.PI * 2) / n;
+      const fs = Math.max(W * 0.022, Math.min(W * 0.07, (W * 0.9) / n));
+      for (let i = 0; i < n; i++) {
+        const a0 = this.rot - Math.PI / 2 + i * seg;
+        const col = this.items[i].color;
+        c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R, a0, a0 + seg); c.closePath();
+        c.fillStyle = col; c.fill();
+        if (n > 1) { c.strokeStyle = "rgba(0,0,0,.28)"; c.lineWidth = Math.max(1, W * 0.003); c.stroke(); }
+        c.save(); c.rotate(a0 + seg / 2);
+        c.fillStyle = textOn(col); c.textAlign = "right"; c.textBaseline = "middle";
+        c.font = `700 ${fs}px ${bodyFont}`;
+        const maxW = R * 0.66;
+        let label = this.items[i].label;
+        while (label.length > 2 && c.measureText(label).width > maxW) label = label.slice(0, -2) + "…";
+        c.fillText(label, R - W * 0.03, 0);
+        c.restore();
+      }
+      // studs on the rim
+      for (let i = 0; i < Math.min(n, 48); i++) {
+        const a = this.rot - Math.PI / 2 + (i * Math.PI * 2) / Math.min(n, 48);
+        c.beginPath(); c.arc(Math.cos(a) * (R + W * 0.011), Math.sin(a) * (R + W * 0.011), W * 0.006, 0, Math.PI * 2);
+        c.fillStyle = fg; c.fill();
+      }
+      c.restore();
+    }
+    indexAt(rot) {
+      const n = this.items.length, seg = (Math.PI * 2) / n;
+      const a = ((-rot % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      return Math.floor(a / seg) % n;
+    }
+    spinTo(index, ms = 5200) {
+      const n = this.items.length; if (!n) return Promise.resolve(-1);
+      const seg = (Math.PI * 2) / n;
+      const jitter = (Math.random() - 0.5) * 0.7;
+      const target = -((index + 0.5 + jitter) * seg);
+      const TAU = Math.PI * 2;
+      const start = this.rot;
+      let delta = ((target - start) % TAU + TAU) % TAU;
+      delta += TAU * (5 + randInt(3));
+      if (reduceMotion) ms = 400;
+      this.spinning = true;
+      let last = this.indexAt(start);
+      return new Promise((res) => {
+        const t0 = performance.now();
+        const step = (now) => {
+          const p = Math.min(1, (now - t0) / ms);
+          const e = 1 - Math.pow(1 - p, 4);
+          this.rot = start + delta * e;
+          this.draw();
+          const idx = this.indexAt(this.rot);
+          if (idx !== last) {
+            last = idx; blip(1200, 0.02, "square", 0.025);
+            if (this.pointer) { this.pointer.classList.remove("tick"); void this.pointer.offsetWidth; this.pointer.classList.add("tick"); }
+          }
+          if (p < 1) requestAnimationFrame(step);
+          else { this.rot = this.rot % TAU; this.spinning = false; res(index); }
+        };
+        requestAnimationFrame(step);
+      });
+    }
+  }
+  function textOn(hex) {
+    const m = hex.replace("#", "");
+    const v = m.length === 3 ? m.split("").map((x) => x + x).join("") : m;
+    const r = parseInt(v.slice(0, 2), 16), g = parseInt(v.slice(2, 4), 16), b = parseInt(v.slice(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#111111" : "#ffffff";
+  }
+  const skinColors = () => SKINS[S.skin].wheel;
+
+  // ---------- Shot glass SVG ----------
+  let glassSeq = 0;
+  const liquidY = (f) => 108 - Math.max(0, Math.min(1, f)) * 99;
+  function glassSVG(fill, { cls = "", stat = false } = {}) {
+    const id = "gl" + (++glassSeq);
+    return `<svg class="glass ${stat ? "static" : ""} ${cls}" viewBox="0 0 100 130" aria-hidden="true">
+      <defs>
+        <clipPath id="${id}c"><path d="M15 12 L85 12 L76 106 L24 106 Z"/></clipPath>
+        <linearGradient id="${id}g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--liquid)"/><stop offset="1" stop-color="var(--liquid-2)"/></linearGradient>
+      </defs>
+      <path d="M10 6 L90 6 L80 112 L20 112 Z" fill="var(--glass)"/>
+      <g clip-path="url(#${id}c)">
+        <g class="liq" style="transform: translateY(${liquidY(fill)}px)">
+          <path class="wave" d="M0 6 Q12.5 0 25 6 T50 6 T75 6 T100 6 T125 6 T150 6 T175 6 T200 6 V140 H0 Z" fill="url(#${id}g)"/>
+          ${stat ? "" : `<circle class="bub" cx="40" cy="96" r="2.2" fill="rgba(255,255,255,.7)"/><circle class="bub" cx="58" cy="98" r="1.6" fill="rgba(255,255,255,.7)"/><circle class="bub" cx="49" cy="100" r="2" fill="rgba(255,255,255,.7)"/>`}
+        </g>
+      </g>
+      <path d="M10 6 L90 6 L80 112 L20 112 Z" fill="none" stroke="var(--glass-edge)" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M20 112 L80 112 L81 124 L19 124 Z" fill="var(--glass-edge)" opacity=".9"/>
+      <path d="M22 16 L28 96" stroke="rgba(255,255,255,.35)" stroke-width="3" stroke-linecap="round"/>
+    </svg>`;
+  }
+  function setGlass(svg, f, ms) {
+    const liq = svg.querySelector(".liq");
+    if (ms != null) liq.style.transitionDuration = ms + "ms";
+    liq.style.transform = `translateY(${liquidY(f)}px)`;
+  }
+
+  // ---------- Toast ----------
+  let toastT;
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 2600);
+  }
+
+  // ---------- Skins + tabs ----------
+  function renderSkins() {
+    $("#skins").innerHTML = Object.entries(SKINS).map(([k, v]) =>
+      `<button type="button" class="skin-btn" data-skin="${k}" aria-pressed="${S.skin === k}"><i style="background:${v.dot}"></i>${v.label}</button>`).join("");
+  }
+  function applySkin() {
+    document.documentElement.dataset.skin = S.skin;
+    $("#tagline").textContent = SKINS[S.skin].tagline;
+    $("#hubSpin").textContent = SKINS[S.skin].spin;
+    renderSkins();
+    // fonts may swap in after load; redraw wheels once they settle
+    document.fonts && document.fonts.ready.then(() => { mainWheel.draw(); rngWheel && rngWheel.draw(); });
+  }
+  $("#skins").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-skin]"); if (!b) return;
+    S.skin = b.dataset.skin; save(); applySkin(); renderAll();
+  });
+  function setTab(t) {
+    S.tab = t; save();
+    ["setup", "spin", "scores", "history"].forEach((k) => {
+      $("#view-" + k).hidden = k !== t;
+      $("#tab-" + k).setAttribute("aria-selected", String(k === t));
+    });
+    renderAll();
+  }
+  $$(".tab").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+  // ---------- Lineup (setup) ----------
+  const playerColor = (i) => skinColors()[i % skinColors().length];
+  function renderSetup() {
+    const n = N();
+    const done = playedIds();
+    const count = allGames().length;
+    $("#view-setup").innerHTML = `
+      <div class="panel setup-head">
+        <div class="stack" style="gap:6px;min-width:0">
+          <div class="eyebrow">${n.started ? "Night in progress · started " + fmtDate(n.started) : "New night"}</div>
+          <h2>The lineup</h2>
+          <div class="muted">Everyone picks ${n.perPlayer} games. Then you take turns spinning to see what gets played next.</div>
+        </div>
+        <div class="row">
+          <label class="field" style="width:130px">Games each <input type="number" id="perPlayer" min="1" max="25" value="${n.perPlayer}"></label>
+          <button class="btn" type="button" id="addPlayer">Add player</button>
+          <button class="btn" type="button" id="shuffleOrder">Shuffle turn order</button>
+          <button class="btn primary big" type="button" id="startNight">${n.started ? "Back to the wheel" : "Start the night"}</button>
+        </div>
+        ${n.sample ? `<div class="note" style="flex-basis:100%">This is an example lineup so you can see how it works. Rename the players and swap in your own games, or <button class="btn small ghost" type="button" id="clearSample">clear it out</button>.</div>` : ""}
+      </div>
+      <div class="players-grid">
+        ${n.players.map((p, i) => `
+          <div class="panel pcard" data-pid="${p.id}">
+            <div class="pcard-head">
+              <span class="dot" style="background:${playerColor(i)}"></span>
+              <input type="text" id="pname-${p.id}" data-field="name" value="${esc(p.name)}" aria-label="Player name" placeholder="Player name">
+              <button class="btn small danger" type="button" data-remove="${p.id}" aria-label="Remove ${esc(p.name)}">${removeArm === p.id ? "Sure?" : "✕"}</button>
+            </div>
+            <div class="eyebrow">Turn ${i + 1} · ${p.games.filter((g) => g.title.trim()).length}/${n.perPlayer} picked</div>
+            <ol class="games-list">
+              ${p.games.map((g) => `<li class="${done.has(g.id) ? "played" : ""}"><input type="text" id="g-${g.id}" data-gid="${g.id}" value="${esc(g.title)}" placeholder="Pick a game" aria-label="Game pick"></li>`).join("")}
+            </ol>
+          </div>`).join("")}
+      </div>
+      <div class="muted" style="text-align:center">${count} games in the pot · ${n.players.length} players</div>`;
+  }
+  let removeArm = null;
+  $("#view-setup").addEventListener("input", (e) => {
+    const el = e.target, n = N();
+    const card = el.closest("[data-pid]");
+    if (el.id === "perPlayer") return;
+    if (!card) return;
+    const p = playerById(card.dataset.pid);
+    if (el.dataset.field === "name") p.name = el.value;
+    if (el.dataset.gid) { const g = p.games.find((x) => x.id === el.dataset.gid); if (g) g.title = el.value; }
+    n.sample = false;
+    save();
+  });
+  $("#view-setup").addEventListener("change", (e) => {
+    if (e.target.id === "perPlayer") {
+      const per = Math.max(1, Math.min(25, parseInt(e.target.value, 10) || 10));
+      N().perPlayer = per;
+      N().players.forEach((p) => {
+        while (p.games.length < per) p.games.push({ id: uid(), title: "" });
+        // only trim empty slots so picks are never lost
+        while (p.games.length > per && !p.games[p.games.length - 1].title.trim()) p.games.pop();
+      });
+      save(); renderSetup();
+    } else if (e.target.closest("[data-pid]")) {
+      renderSetupCounts();
+    }
+  });
+  function renderSetupCounts() {
+    // light refresh without stealing focus: update the "x/10 picked" labels
+    $$("#view-setup [data-pid]").forEach((card) => {
+      const p = playerById(card.dataset.pid); if (!p) return;
+      const i = N().players.indexOf(p);
+      card.querySelector(".eyebrow").textContent = `Turn ${i + 1} · ${p.games.filter((g) => g.title.trim()).length}/${N().perPlayer} picked`;
+    });
+  }
+  $("#view-setup").addEventListener("click", (e) => {
+    const n = N();
+    if (e.target.closest("#addPlayer")) {
+      n.players.push(mkPlayer("Player " + (n.players.length + 1), [], n.perPlayer));
+      n.sample = false; save(); renderSetup();
+      const last = n.players[n.players.length - 1];
+      $("#pname-" + last.id)?.select();
+    } else if (e.target.closest("#shuffleOrder")) {
+      const cur = spinner();
+      for (let i = n.players.length - 1; i > 0; i--) { const j = randInt(i + 1); [n.players[i], n.players[j]] = [n.players[j], n.players[i]]; }
+      n.turn = cur ? Math.max(0, n.players.indexOf(cur)) : 0;
+      save(); renderSetup(); toast("Turn order shuffled");
+    } else if (e.target.closest("#clearSample")) {
+      n.players = [mkPlayer("Player 1", [], n.perPlayer), mkPlayer("Player 2", [], n.perPlayer)];
+      n.sample = false; n.rounds = []; n.turn = 0; save(); renderSetup();
+    } else if (e.target.closest("[data-remove]")) {
+      const id = e.target.closest("[data-remove]").dataset.remove;
+      if (removeArm !== id) { removeArm = id; renderSetup(); setTimeout(() => { if (removeArm === id) { removeArm = null; renderSetup(); } }, 3000); return; }
+      removeArm = null;
+      const cur = spinner();
+      n.players = n.players.filter((p) => p.id !== id);
+      n.turn = cur && cur.id !== id ? n.players.indexOf(cur) : (n.players.length ? n.turn % n.players.length : 0);
+      if (n.pending && n.pending.by === id) n.pending = null;
+      save(); renderSetup();
+    } else if (e.target.closest("#startNight")) {
+      const ready = n.players.filter((p) => p.name.trim() && p.games.some((g) => g.title.trim()));
+      if (n.players.length < 2) return toast("Add at least two players");
+      if (ready.length < n.players.length) return toast("Every player needs a name and at least one game");
+      if (!n.started) n.started = Date.now();
+      save(); setTab("spin");
+    }
+  });
+
+  // ---------- Spin ----------
+  const mainWheel = new Wheel($("#mainWheel"), $("#mainPointer"));
+  let form = null; // record-result form state while a game is pending
+
+  function refreshWheel() {
+    if (mainWheel.spinning) return;
+    const n = N();
+    // the pending game is still unplayed, so it stays on the wheel until recorded
+    const list = wheelPool().list;
+    const colors = skinColors();
+    const idx = new Map(n.players.map((p, i) => [p.id, i]));
+    mainWheel.setItems(list.map((g, i) => ({ id: g.id, label: g.title, color: colors[(i + (idx.get(g.by) || 0)) % colors.length] })));
+    // if a pending game exists, park the wheel on it
+    if (n.pending && !mainWheel._parked) {
+      const k = mainWheel.items.findIndex((x) => x.id === n.pending.gameId);
+      if (k >= 0) { mainWheel.rot = -((k + 0.5) * (Math.PI * 2) / mainWheel.items.length); mainWheel.draw(); }
+      mainWheel._parked = true;
+    }
+  }
+
+  function renderSpin() {
+    const n = N();
+    if (!n.started) {
+      $("#spinSide").innerHTML = `<div class="panel empty"><h3>The wheel is waiting</h3><div>Fill in the lineup, then start the night.</div><button class="btn primary" type="button" data-go="setup">Go to the lineup</button></div>`;
+      $("#roundLog").innerHTML = "";
+      $("#poolCtl").innerHTML = "";
+      $("#hubSpin").disabled = true;
+      refreshWheel();
+      return;
+    }
+    const sp = spinner();
+    const { list, fallback } = wheelPool();
+    const pend = n.pending && allGames().find((g) => g.id === n.pending.gameId);
+    $("#hubSpin").disabled = !!pend || !list.length || mainWheel.spinning;
+    $("#poolCtl").innerHTML = `
+      <div class="seg" role="group" aria-label="What goes on the wheel">
+        <button type="button" data-pool="all" aria-pressed="${n.pool === "all"}">Everyone's games</button>
+        <button type="button" data-pool="own" aria-pressed="${n.pool === "own"}">Spinner's games only</button>
+      </div>
+      <span class="muted num">${remaining().length} of ${allGames().length} left</span>`;
+
+    let side = `
+      <div class="panel up-next">
+        <div class="eyebrow">${pend ? "Spun by" : "Up to spin"} · round ${n.rounds.filter((r) => r.gameId).length + 1}</div>
+        <div class="who">${esc(pend ? (playerById(n.pending.spunBy)?.name || "?") : sp?.name)}</div>
+        <div class="order">${n.players.map((p, i) => `<span class="chip ${i === n.turn % n.players.length ? "now" : ""}">${esc(p.name)}</span>`).join("")}</div>
+        ${fallback ? `<div class="note">${esc(sp.name)} is out of games, so the wheel has everyone's.</div>` : ""}
+        ${!pend ? `<div class="row">
+          <button class="btn big primary" type="button" id="spinBtn" ${!list.length || mainWheel.spinning ? "disabled" : ""}>${SKINS[S.skin].spin} the wheel</button>
+          <button class="btn ghost" type="button" id="skipTurn">Skip turn</button>
+        </div>` : ""}
+        ${!list.length && !pend ? `<div class="note">Every game has been played. Add more in the lineup, or wrap up the night from History.</div>` : ""}
+      </div>`;
+
+    if (pend) side += recordFormHTML(pend);
+    $("#spinSide").innerHTML = side;
+    renderRoundLog();
+    refreshWheel();
+  }
+
+  function recordFormHTML(g) {
+    const n = N();
+    if (!form || form.gameId !== g.id) {
+      form = { gameId: g.id, winner: "", amount: 1, drinks: {} };
+      n.players.forEach((p) => (form.drinks[p.id] = { on: true, amt: 1 }));
+    }
+    const picker = playerById(g.by);
+    const amounts = [0.25, 0.5, 0.75, 1, 1.5, 2, 3];
+    return `
+      <div class="panel landed" id="landed">
+        <div class="row" style="gap:12px;align-items:flex-start">
+          <span class="alert-mark" aria-hidden="true">!</span>
+          <div style="min-width:0">
+            <div class="eyebrow">${esc(SKINS[S.skin].landed)} · picked by ${esc(picker?.name || "?")}</div>
+            <div class="game-title">${esc(g.title)}</div>
+          </div>
+        </div>
+        <div class="stack" style="gap:6px">
+          <div class="eyebrow">Who won?</div>
+          <div class="winner-grid" role="radiogroup" aria-label="Winner">
+            ${n.players.map((p) => `<label class="pick"><input type="radio" name="winner" value="${p.id}" ${form.winner === p.id ? "checked" : ""}><span>${esc(p.name)}</span></label>`).join("")}
+            <label class="pick"><input type="radio" name="winner" value="tie" ${form.winner === "tie" ? "checked" : ""}><span>Tie / nobody</span></label>
+          </div>
+        </div>
+        <div class="stack" style="gap:6px">
+          <div class="eyebrow">Shots on the line</div>
+          <div class="amounts">
+            ${amounts.map((a) => `<button type="button" class="btn small amt" data-amt="${a}" aria-pressed="${form.amount === a}">${fmtShots(a)}</button>`).join("")}
+            <span class="stepper"><button type="button" class="btn small" data-step="-0.25" aria-label="Quarter shot less">−</button>
+            <input type="number" id="amtInput" min="0" step="0.25" value="${form.amount}" aria-label="Shots per drinker">
+            <button type="button" class="btn small" data-step="0.25" aria-label="Quarter shot more">+</button></span>
+          </div>
+        </div>
+        <div class="stack" style="gap:6px">
+          <div class="eyebrow">Who drinks? Tap a name to leave them out, or fine-tune each pour.</div>
+          <div class="drink-grid">
+            ${n.players.map((p) => { const d = form.drinks[p.id] || { on: false, amt: form.amount }; return `
+              <div class="drinker ${d.on ? "" : "off"}" data-dpid="${p.id}">
+                <label><input type="checkbox" data-don="${p.id}" ${d.on ? "checked" : ""}> ${esc(p.name)}</label>
+                <button type="button" data-dstep="-0.25" aria-label="Less for ${esc(p.name)}">−</button>
+                <span class="mini-amt num">${fmtShots(d.amt)}</span>
+                <button type="button" data-dstep="0.25" aria-label="More for ${esc(p.name)}">+</button>
+              </div>`; }).join("")}
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn big primary" type="button" id="recordBtn">Pour it</button>
+          <button class="btn ghost" type="button" id="respinBtn">Put it back &amp; respin</button>
+        </div>
+      </div>`;
+  }
+
+  function syncDrinkersToWinner() {
+    N().players.forEach((p) => {
+      const d = form.drinks[p.id] || (form.drinks[p.id] = { on: true, amt: form.amount });
+      d.on = form.winner === "tie" ? true : p.id !== form.winner;
+    });
+  }
+
+  $("#spinSide").addEventListener("change", (e) => {
+    if (!form) return;
+    const t = e.target;
+    if (t.name === "winner") { form.winner = t.value; syncDrinkersToWinner(); renderSpin(); }
+    else if (t.dataset.don) { form.drinks[t.dataset.don].on = t.checked; renderSpin(); }
+    else if (t.id === "amtInput") { setAmount(parseFloat(t.value)); }
+  });
+  function setAmount(a) {
+    if (!(a >= 0)) a = 1;
+    form.amount = q4(a);
+    Object.values(form.drinks).forEach((d) => (d.amt = form.amount));
+    renderSpin();
+  }
+  $("#spinSide").addEventListener("click", async (e) => {
+    const t = e.target.closest("button"); if (!t) return;
+    const n = N();
+    if (t.dataset.go) return setTab(t.dataset.go);
+    if (t.id === "spinBtn") return doSpin();
+    if (t.id === "skipTurn") { n.turn = (n.turn + 1) % n.players.length; save(); renderSpin(); return; }
+    if (!form) return;
+    if (t.dataset.amt) return setAmount(parseFloat(t.dataset.amt));
+    if (t.dataset.step) return setAmount(form.amount + parseFloat(t.dataset.step));
+    if (t.dataset.dstep) {
+      const pid = t.closest("[data-dpid]").dataset.dpid, d = form.drinks[pid];
+      d.amt = q4(d.amt + parseFloat(t.dataset.dstep)); if (d.amt > 0) d.on = true;
+      return renderSpin();
+    }
+    if (t.id === "respinBtn") { n.pending = null; form = null; mainWheel._parked = false; save(); renderSpin(); return; }
+    if (t.id === "recordBtn") return recordRound();
+  });
+  $("#poolCtl").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-pool]"); if (!b) return;
+    N().pool = b.dataset.pool; save(); renderSpin();
+  });
+  $("#hubSpin").addEventListener("click", () => doSpin());
+
+  async function doSpin() {
+    const n = N();
+    if (mainWheel.spinning || n.pending || !n.started) return;
+    refreshWheel();
+    const items = mainWheel.items; if (!items.length) return;
+    const k = randInt(items.length);
+    $("#hubSpin").disabled = true;
+    const sb = $("#spinBtn"); if (sb) sb.disabled = true;
+    await mainWheel.spinTo(k);
+    const g = items[k];
+    n.pending = { gameId: g.id, spunBy: spinner().id, by: allGames().find((x) => x.id === g.id)?.by };
+    mainWheel._parked = true;
+    save(); fanfare(); renderSpin();
+    $("#landed")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest" });
+  }
+
+  async function recordRound() {
+    const n = N();
+    if (!form.winner) return toast("Pick a winner (or Tie) first");
+    const g = allGames().find((x) => x.id === n.pending.gameId);
+    const drinks = Object.entries(form.drinks).filter(([pid, d]) => d.on && d.amt > 0 && playerById(pid)).map(([pid, d]) => ({ pid, amt: d.amt }));
+    n.rounds.push({ id: uid(), ts: Date.now(), gameId: g.id, title: g.title, by: g.by, spunBy: n.pending.spunBy, winner: form.winner === "tie" ? null : form.winner, drinks });
+    n.turn = (n.turn + 1) % n.players.length;
+    n.pending = null; form = null; mainWheel._parked = false;
+    save(); renderSpin();
+    await pour(drinks, form?.winner);
+  }
+
+  function renderRoundLog() {
+    const n = N();
+    const rounds = n.rounds.slice().reverse();
+    $("#roundLog").innerHTML = `
+      <div class="row" style="justify-content:space-between">
+        <h3>Tonight's rounds</h3>
+        ${n.rounds.length ? `<button class="btn small ghost" type="button" id="undoRound">Undo last</button>` : ""}
+      </div>
+      ${rounds.length ? `<ol class="log">${rounds.map((r, i) => {
+        const num = rounds.length - i;
+        const drinkers = r.drinks.map((d) => `${esc(playerById(d.pid)?.name || "?")} ${fmtShots(d.amt)}`).join(", ");
+        const total = r.drinks.reduce((a, d) => a + d.amt, 0);
+        return `<li><span class="rn num">${r.gameId ? num : "+"}</span>
+          <span class="what">${r.gameId ? `<b>${esc(r.title)}</b> · ${r.winner ? "won by " + esc(playerById(r.winner)?.name || "?") : "tie"}` : `<b>${esc(r.note || "Penalty")}</b>`}<br><span class="muted">${drinkers || "nobody drank"}</span></span>
+          <span class="shots">${fmtShots(total)} shot${total === 1 ? "" : "s"}</span></li>`;
+      }).join("")}</ol>` : `<div class="muted">No rounds yet. Spin the wheel to play the first game.</div>`}`;
+  }
+  $("#roundLog").addEventListener("click", (e) => {
+    if (!e.target.closest("#undoRound")) return;
+    const n = N(); const r = n.rounds.pop();
+    if (r && r.gameId) n.turn = (n.turn - 1 + n.players.length) % n.players.length;
+    save(); renderAll(); toast("Last round undone");
+  });
+
+  // ---------- Pour animation ----------
+  let pourSkip = false;
+  async function pour(drinks) {
+    if (!drinks.length) return;
+    const max = Math.max(...drinks.map((d) => d.amt));
+    const groups = {};
+    drinks.forEach((d) => (groups[d.amt] = groups[d.amt] || []).push(playerById(d.pid)?.name || "?"));
+    const who = Object.entries(groups).map(([a, names]) => `${names.map(esc).join(", ")} · ${fmtShots(+a)}`).join("<br>");
+    const ov = $("#pour"), card = $("#pourCard");
+    card.innerHTML = `<div class="eyebrow">Bottoms up</div>${glassSVG(0)}<div class="count num" id="pourCount">0</div><div class="who">${who}</div><div class="quip">${esc(pickOne(SKINS[S.skin].quips))}</div><div class="muted" style="font-size:.8rem">Tap to close</div>`;
+    ov.hidden = false; pourSkip = false;
+    const svg = card.querySelector("svg");
+    await wait(60);
+    let left = max, count = 0;
+    const fast = max > 4;
+    while (left > 0.001 && !pourSkip) {
+      const f = Math.min(1, left);
+      const ms = (fast ? 450 : 900) * f + 250;
+      setGlass(svg, f, ms);
+      blip(300 + 400 * f, ms / 1000, "sine", 0.03);
+      await wait(ms);
+      count += f; left -= f;
+      $("#pourCount").textContent = fmtShots(count);
+      if (left > 0.001 && !pourSkip) { await wait(fast ? 120 : 260); setGlass(svg, 0, fast ? 220 : 380); await wait(fast ? 240 : 400); }
+    }
+    $("#pourCount").textContent = fmtShots(max);
+    if (!pourSkip) await wait(1600);
+    ov.hidden = true;
+  }
+  $("#pour").addEventListener("click", () => { pourSkip = true; $("#pour").hidden = true; });
+
+  // ---------- Scores ----------
+  const prevFill = {};
+  function renderScores() {
+    const n = N(), t = totals();
+    if (!n.players.length) { $("#view-scores").innerHTML = `<div class="panel empty">No players yet.</div>`; return; }
+    const most = Math.max(...n.players.map((p) => t[p.id].shots));
+    const topWins = Math.max(...n.players.map((p) => t[p.id].wins));
+    $("#view-scores").innerHTML = `
+      <div class="panel row" style="justify-content:space-between">
+        <div class="stack" style="gap:4px">
+          <div class="eyebrow">${n.started ? "Started " + fmtDate(n.started) : "Not started yet"}</div>
+          <h2>Shot board</h2>
+        </div>
+        <div class="muted num">${fmtShots(Object.values(t).reduce((a, x) => a + x.shots, 0))} shots poured · ${n.rounds.filter((r) => r.gameId).length} games played</div>
+      </div>
+      <div class="score-grid">
+        ${n.players.map((p) => {
+          const s = t[p.id].shots, whole = Math.floor(s + 1e-9), part = s - whole;
+          const cur = part > 0.001 ? part : (whole > 0 ? 1 : 0);
+          const shown = Math.min(whole, 20);
+          return `<div class="panel scard" data-sp="${p.id}" data-fill="${cur}">
+            ${most > 0 && s === most ? `<span class="crown">Most poured</span>` : ""}
+            ${topWins > 0 && t[p.id].wins === topWins ? `<span class="crown alt">Top winner</span>` : ""}
+            <div class="pname" style="margin-top:18px">${esc(p.name)}</div>
+            ${glassSVG(prevFill[p.id] ?? 0, { cls: "glass-big" })}
+            <div class="total num">${fmtShots(s)}</div>
+            <div class="minis" aria-label="${fmtShots(s)} shots">${Array.from({ length: shown }, () => glassSVG(1, { stat: true })).join("")}${part > 0.001 ? glassSVG(part, { stat: true }) : ""}${whole > shown ? `<span class="more">+${whole - shown}</span>` : ""}</div>
+            <div class="stat-row"><span>Wins <b>${t[p.id].wins}</b></span><span>Games left <b>${p.games.filter((g) => g.title.trim() && !playedIds().has(g.id)).length}</b></span></div>
+            <div class="penalty">
+              <span class="muted" style="font-size:.8rem;align-self:center">Penalty</span>
+              ${[0.25, 0.5, 1].map((a) => `<button class="btn small" type="button" data-pen="${a}" data-pid="${p.id}">+${fmtShots(a)}</button>`).join("")}
+            </div>
+          </div>`;
+        }).join("")}
+      </div>`;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      $$("#view-scores [data-sp]").forEach((card) => {
+        const f = parseFloat(card.dataset.fill);
+        setGlass(card.querySelector(".glass-big"), f);
+        prevFill[card.dataset.sp] = f;
+      });
+    }));
+  }
+  $("#view-scores").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-pen]"); if (!b) return;
+    const amt = parseFloat(b.dataset.pen), p = playerById(b.dataset.pid);
+    const d = [{ pid: p.id, amt }];
+    N().rounds.push({ id: uid(), ts: Date.now(), gameId: null, note: "Penalty", winner: null, drinks: d });
+    save(); renderScores();
+    await pour(d);
+  });
+
+  // ---------- History ----------
+  let deleteArm = null, endArm = false;
+  function allTime() {
+    const map = {};
+    const nights = [...S.archive, ...(N().started ? [N()] : [])];
+    nights.forEach((night) => {
+      const t = totals(night);
+      night.players.forEach((p) => {
+        const key = p.name.trim().toLowerCase(); if (!key) return;
+        const m = map[key] || (map[key] = { name: p.name.trim(), nights: 0, wins: 0, shots: 0, games: 0 });
+        m.nights++; m.wins += t[p.id].wins; m.shots += t[p.id].shots;
+        m.games += night.rounds.filter((r) => r.gameId && (r.drinks.some((d) => d.pid === p.id) || r.winner === p.id)).length;
+      });
+    });
+    return Object.values(map).sort((a, b) => b.wins - a.wins || a.shots - b.shots);
+  }
+  function nightSummary(night) {
+    const t = totals(night);
+    const played = night.rounds.filter((r) => r.gameId);
+    const shots = Object.values(t).reduce((a, x) => a + x.shots, 0);
+    const champ = night.players.slice().sort((a, b) => t[b.id].wins - t[a.id].wins)[0];
+    return { played, shots, champ: champ && t[champ.id].wins ? champ.name : "—", t };
+  }
+  function renderHistory() {
+    const lb = allTime();
+    const n = N();
+    const nights = S.archive.slice().reverse();
+    $("#view-history").innerHTML = `
+      <div class="hist-grid">
+        <div class="panel stack">
+          <div class="row" style="justify-content:space-between">
+            <h2>Hall of fame</h2>
+            <span class="muted num">${S.archive.length} past night${S.archive.length === 1 ? "" : "s"}${n.started ? " + tonight" : ""}</span>
+          </div>
+          ${lb.length ? `<div class="table-wrap"><table>
+            <thead><tr><th>Player</th><th class="n">Nights</th><th class="n">Wins</th><th class="n">Shots</th><th class="n">Shots / night</th></tr></thead>
+            <tbody>${lb.map((m) => `<tr><td><b>${esc(m.name)}</b></td><td class="n">${m.nights}</td><td class="n">${m.wins}</td><td class="n">${fmtShots(m.shots)}</td><td class="n">${fmtShots(m.shots / m.nights)}</td></tr>`).join("")}</tbody>
+          </table></div>` : `<div class="muted">Start a night and the all-time standings show up here. Players are matched by name across nights.</div>`}
+          <h3 style="margin-top:8px">Past nights</h3>
+          ${nights.length ? nights.map((night) => {
+            const s = nightSummary(night);
+            return `<details class="night">
+              <summary><b>${fmtDate(night.started || night.created)}</b><span class="muted">${night.players.map((p) => esc(p.name)).join(", ")}</span><span class="num">${s.played.length} games · ${fmtShots(s.shots)} shots · MVP ${esc(s.champ)}</span></summary>
+              <div class="body">
+                <div class="table-wrap"><table><thead><tr><th>Player</th><th class="n">Wins</th><th class="n">Shots</th></tr></thead><tbody>
+                  ${night.players.map((p) => `<tr><td>${esc(p.name)}</td><td class="n">${s.t[p.id].wins}</td><td class="n">${fmtShots(s.t[p.id].shots)}</td></tr>`).join("")}
+                </tbody></table></div>
+                <ol class="log">${night.rounds.map((r, i) => `<li><span class="rn num">${r.gameId ? i + 1 : "+"}</span><span class="what"><b>${esc(r.title || r.note || "Penalty")}</b>${r.gameId ? " · " + (r.winner ? esc(playerById(r.winner, night)?.name || "?") : "tie") : ""}</span><span class="shots">${fmtShots(r.drinks.reduce((a, d) => a + d.amt, 0))}</span></li>`).join("")}</ol>
+                ${(night.rolls || []).length ? `<div class="muted">Chaos rolls: ${night.rolls.map((r) => `${r.result}${r.note ? " (" + esc(r.note) + ")" : ""}`).join(", ")}</div>` : ""}
+                <div><button class="btn small danger" type="button" data-del="${night.id}">${deleteArm === night.id ? "Tap again to delete" : "Delete this night"}</button></div>
+              </div>
+            </details>`;
+          }).join("") : `<div class="muted">Nothing archived yet. When you wrap up tonight it lands here.</div>`}
+        </div>
+        <div class="stack">
+          <div class="panel stack">
+            <h3>Wrap up tonight</h3>
+            <div class="muted">Saves tonight to the hall of fame and starts a fresh night. You can keep the same crew and pick new games.</div>
+            <div class="row">
+              <button class="btn primary" type="button" id="endKeep" ${n.started ? "" : "disabled"}>${endArm === "keep" ? "Tap again to confirm" : "End night, keep crew"}</button>
+              <button class="btn" type="button" id="endNew" ${n.started ? "" : "disabled"}>${endArm === "new" ? "Tap again to confirm" : "End night, new crew"}</button>
+            </div>
+          </div>
+          <div class="panel stack">
+            <h3>Backup</h3>
+            <div class="muted">Everything lives in this browser. Copy a backup to move it to another phone or keep it safe.</div>
+            <div class="row">
+              <button class="btn" type="button" id="copyBackup">Copy backup</button>
+              <button class="btn" type="button" id="dlBackup">Download file</button>
+            </div>
+            <label class="field">Restore from a backup (paste it here)<textarea id="importBox" rows="3" placeholder='{"app":"pour-decisions", …}'></textarea></label>
+            <div class="row"><button class="btn" type="button" id="importBtn">Restore</button><label class="btn ghost" for="importFile">Open file…</label><input type="file" id="importFile" accept="application/json,.json" hidden></div>
+          </div>
+          <div class="panel stack">
+            <h3>Sound</h3>
+            <div class="row"><button class="btn" type="button" id="soundBtn" aria-pressed="${S.sound}">${S.sound ? "Sound on" : "Sound off"}</button></div>
+          </div>
+        </div>
+      </div>`;
+  }
+  const backupJSON = () => JSON.stringify({ app: "pour-decisions", version: 1, exported: Date.now(), archive: S.archive, night: S.night }, null, 1);
+  function importBackup(text) {
+    try {
+      const d = JSON.parse(text);
+      if (d.app !== "pour-decisions" || !Array.isArray(d.archive)) throw new Error("bad");
+      const have = new Set(S.archive.map((x) => x.id));
+      let added = 0;
+      d.archive.forEach((x) => { if (!have.has(x.id)) { S.archive.push(x); added++; } });
+      S.archive.sort((a, b) => (a.started || a.created) - (b.started || b.created));
+      if (d.night && d.night.started && !have.has(d.night.id) && d.night.id !== S.night.id && (!S.night.started || S.night.sample)) S.night = d.night;
+      save(); renderAll(); toast(`Restored ${added} night${added === 1 ? "" : "s"}`);
+    } catch { toast("That doesn't look like a Pour Decisions backup"); }
+  }
+  $("#view-history").addEventListener("click", async (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.del) {
+      if (deleteArm !== b.dataset.del) { deleteArm = b.dataset.del; renderHistory(); const d = $(`[data-del="${deleteArm}"]`); d && (d.closest("details").open = true); return; }
+      S.archive = S.archive.filter((x) => x.id !== b.dataset.del); deleteArm = null; save(); renderHistory(); toast("Night deleted");
+    } else if (b.id === "endKeep" || b.id === "endNew") {
+      const mode = b.id === "endKeep" ? "keep" : "new";
+      if (endArm !== mode) { endArm = mode; renderHistory(); setTimeout(() => { if (endArm === mode) { endArm = false; renderHistory(); } }, 3500); return; }
+      endArm = false;
+      const old = N();
+      old.ended = Date.now(); old.pending = null;
+      S.archive.push(old);
+      const per = old.perPlayer;
+      const players = mode === "keep" ? old.players.map((p) => mkPlayer(p.name, [], per)) : [mkPlayer("Player 1", [], per), mkPlayer("Player 2", [], per)];
+      S.night = newNight(players); S.night.perPlayer = per; form = null;
+      save(); toast("Night saved to the hall of fame"); setTab("setup");
+    } else if (b.id === "copyBackup") {
+      const txt = backupJSON();
+      try { await navigator.clipboard.writeText(txt); toast("Backup copied"); }
+      catch { const box = $("#importBox"); box.value = txt; box.select(); toast("Copy blocked here. The backup is selected in the box below."); }
+    } else if (b.id === "dlBackup") {
+      const url = URL.createObjectURL(new Blob([backupJSON()], { type: "application/json" }));
+      const a = document.createElement("a"); a.href = url; a.download = `pour-decisions-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } else if (b.id === "importBtn") {
+      importBackup($("#importBox").value);
+    } else if (b.id === "soundBtn") {
+      S.sound = !S.sound; save(); renderHistory();
+    }
+  });
+  $("#view-history").addEventListener("change", (e) => {
+    if (e.target.id !== "importFile" || !e.target.files[0]) return;
+    const r = new FileReader(); r.onload = () => importBackup(String(r.result)); r.readAsText(e.target.files[0]);
+  });
+
+  // ---------- Chaos roll (RNG) ----------
+  let rngMode = "wheel", rngWheel = null, rolling = false;
+  const PRESETS = [["1–6", 1, 6], ["1–20", 1, 20], ["Heads/Tails", 1, 2], ["1–10", 1, 10], ["0–100", 0, 100]];
+  $("#rngPresets").innerHTML = PRESETS.map(([l, a, b]) => `<button type="button" class="btn small ghost" data-pmin="${a}" data-pmax="${b}">${l}</button>`).join("");
+  function rngRange() {
+    let a = parseInt($("#rngMin").value, 10), b = parseInt($("#rngMax").value, 10);
+    if (!Number.isFinite(a)) a = 1; if (!Number.isFinite(b)) b = a;
+    if (a > b) [a, b] = [b, a];
+    return [a, b];
+  }
+  function coinLabel(v, a, b) { return b - a === 1 ? (v === a ? "Heads" : "Tails") : ""; }
+  function buildStage() {
+    const [a, b] = rngRange(), count = b - a + 1;
+    $$("#rngMode button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.mode === rngMode)));
+    const st = $("#rngStage");
+    rngWheel = null;
+    if (rngMode === "wheel" && count <= 60) {
+      st.innerHTML = `<div class="wheel-box"><div class="pointer" id="rngPointer"><svg viewBox="0 0 34 44"><path d="M17 42 L3 6 Q17 -2 31 6 Z" fill="var(--accent)" stroke="var(--fg)" stroke-width="2.5" stroke-linejoin="round"/></svg></div><canvas id="rngWheel"></canvas></div>`;
+      rngWheel = new Wheel($("#rngWheel"), $("#rngPointer"));
+      const cols = skinColors();
+      rngWheel.setItems(Array.from({ length: count }, (_, i) => ({ label: String(a + i), color: cols[i % cols.length] })));
+    } else if (rngMode === "wheel") {
+      st.innerHTML = `<div class="stack" style="justify-items:center"><div class="ticker num" id="ticker">?</div><div class="muted">${count} numbers is too many slices, so this one spins like a slot reel.</div></div>`;
+    } else if (rngMode === "coin") {
+      st.innerHTML = `<div class="coin" id="coin"><div class="face front"><div><span id="coinF">${a}</span><small>${coinLabel(a, a, b) || "MIN " + a}</small></div></div><div class="face back"><div><span id="coinB">${b}</span><small>${coinLabel(b, a, b) || "MAX " + b}</small></div></div></div>`;
+    } else {
+      const faces = Array.from({ length: 6 }, (_, i) => (count <= 6 ? a + (i % count) : a + randInt(count)));
+      st.innerHTML = `<div class="die" id="die">${faces.map((v, i) => `<div class="f f${i + 1}">${v}</div>`).join("")}</div>`;
+    }
+  }
+  function renderRolls() {
+    const rolls = (N().rolls || []).slice(-6).reverse();
+    $("#rngLog").innerHTML = rolls.length ? `<div class="eyebrow" style="margin-bottom:6px">Tonight's rolls</div><ul class="rolls">${rolls.map((r) => `<li><span>${esc(r.note || "Roll")} <span class="muted">(${r.min}–${r.max}, ${r.mode})</span></span><b class="num">${r.result}</b></li>`).join("")}</ul>` : "";
+  }
+  function openRng() { $("#rng").hidden = false; $("#rngResult").innerHTML = ""; buildStage(); renderRolls(); $("#rngGo").focus(); }
+  function closeRng() { if (rolling) return; $("#rng").hidden = true; }
+  $("#openRng").addEventListener("click", openRng);
+  $("#closeRng").addEventListener("click", closeRng);
+  $("#rng").addEventListener("click", (e) => { if (e.target.id === "rng") closeRng(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (!$("#rng").hidden) closeRng(); if (!$("#pour").hidden) { pourSkip = true; $("#pour").hidden = true; } } });
+  $("#rngMode").addEventListener("click", (e) => { const b = e.target.closest("[data-mode]"); if (!b || rolling) return; rngMode = b.dataset.mode; buildStage(); });
+  $("#rngPresets").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-pmin]"); if (!b || rolling) return;
+    $("#rngMin").value = b.dataset.pmin; $("#rngMax").value = b.dataset.pmax;
+    if (b.dataset.pmax === "2") rngMode = "coin";
+    buildStage();
+  });
+  ["rngMin", "rngMax"].forEach((id) => $("#" + id).addEventListener("change", () => !rolling && buildStage()));
+  $("#rngGo").addEventListener("click", async () => {
+    if (rolling) return;
+    rolling = true; $("#rngGo").disabled = true; $("#rngResult").innerHTML = "&nbsp;";
+    buildStage();
+    const [a, b] = rngRange(), count = b - a + 1;
+    const k = randInt(count), v = a + k;
+    if (rngMode === "wheel" && rngWheel) {
+      await rngWheel.spinTo(k, 3800);
+    } else if (rngMode === "wheel") {
+      const tk = $("#ticker"); let d = 30;
+      while (d < 260 && !reduceMotion) { tk.textContent = a + randInt(count); blip(900, 0.015, "square", 0.02); await wait(d); d *= 1.12; }
+      tk.textContent = v;
+    } else if (rngMode === "coin") {
+      const coin = $("#coin");
+      // land on the front face and paint the result there
+      const flick = setInterval(() => { $("#coinF").textContent = a + randInt(count); $("#coinB").textContent = a + randInt(count); }, 90);
+      const anim = coin.animate([
+        { transform: "translateY(0) rotateX(0deg)" },
+        { transform: "translateY(-150px) rotateX(1080deg)", offset: 0.5 },
+        { transform: "translateY(0) rotateX(2160deg)" },
+      ], { duration: reduceMotion ? 10 : 1800, easing: "cubic-bezier(.3,.6,.4,1)" });
+      await anim.finished.catch(() => {});
+      clearInterval(flick);
+      $("#coinF").textContent = v;
+      coin.querySelector(".front small").textContent = coinLabel(v, a, b) || "RESULT";
+      blip(1400, 0.08, "triangle", 0.05);
+    } else {
+      const die = $("#die");
+      die.querySelector(".f1").textContent = v;
+      const sx = 360 * (3 + randInt(3)), sy = 360 * (3 + randInt(3));
+      const anim = die.animate([
+        { transform: "translateY(-30px) rotateX(23deg) rotateY(-31deg)" },
+        { transform: `translateY(-110px) rotateX(${sx / 2 + 45}deg) rotateY(${sy / 2 + 60}deg)`, offset: 0.45 },
+        { transform: `translateY(0) rotateX(${sx - 20}deg) rotateY(${sy + 15}deg)`, offset: 0.85 },
+        { transform: `translateY(0) rotateX(${sx}deg) rotateY(${sy}deg)` },
+      ], { duration: reduceMotion ? 10 : 1700, easing: "cubic-bezier(.25,.7,.3,1)", fill: "forwards" });
+      await anim.finished.catch(() => {});
+      blip(220, 0.1, "square", 0.05);
+    }
+    const note = $("#rngNote").value.trim();
+    const label = rngMode === "coin" ? coinLabel(v, a, b) : "";
+    $("#rngResult").innerHTML = `${note ? esc(note) : "The number is"}<b class="num">${label ? label + " · " : ""}${v}</b>`;
+    (N().rolls = N().rolls || []).push({ ts: Date.now(), min: a, max: b, mode: rngMode, result: v, note });
+    save(); renderRolls(); fanfare();
+    rolling = false; $("#rngGo").disabled = false;
+  });
+
+  // ---------- Boot ----------
+  function renderAll() {
+    const n = N();
+    const pending = n.pending ? 1 : 0;
+    $("#tab-spin").innerHTML = `Spin${pending ? '<span class="badge">1</span>' : ""}`;
+    if (S.tab === "setup") renderSetup();
+    if (S.tab === "spin") renderSpin();
+    if (S.tab === "scores") renderScores();
+    if (S.tab === "history") renderHistory();
+  }
+  applySkin();
+  setTab(S.tab || "setup");
+})();
+</script>
+<!--ARTIFACT-END-->
+</body>
+</html>
