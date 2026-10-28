@@ -70,31 +70,8 @@
     fleets: [null, null], seed: 0, net: null, battle: null, onlineTab: 'host'
   };
 
-  // ---- menu attract mode ---------------------------------------------------------
-  var menuBoard, menuState;
+  // ---- menu -----------------------------------------------------------------------
   function menuInit() {
-    menuBoard = new FC.Board($('#menu-sea'), { labels: false, silent: true });
-    var map = FC.mapById('open');
-    function reset() {
-      var fleet = FC.randomFleet(FC.CLASSIC_FLEET, map);
-      var N = map.size * map.size;
-      var grid = { shot: new Uint8Array(N), intel: new Uint8Array(N), repaired: new Uint8Array(N), mine: new Uint8Array(N), recon: [], shield: null };
-      var ships = fleet.map(function (s) { return { c: s.c, x: s.x, y: s.y, d: s.d, cells: FC.shipCells(s, map.size), sunk: false }; });
-      menuState = { grid: grid, ships: ships, n: 0 };
-      menuBoard.setView({ map: map, size: map.size, blocked: FC.terrainOf(map), grid: grid, ships: ships, own: true });
-    }
-    reset();
-    setInterval(function () {
-      if (App.screen !== 'menu' || document.hidden) return;
-      if (menuState.n++ > 26) return reset();
-      var i = Math.floor(Math.random() * 100);
-      if (menuState.grid.shot[i]) return;
-      menuBoard.shell(i).then(function () {
-        var hit = menuState.ships.some(function (s) { return s.cells.indexOf(i) >= 0; });
-        menuState.grid.shot[i] = hit ? 2 : 1;
-        if (hit) menuBoard.explode(i); else menuBoard.splash(i);
-      });
-    }, 1400);
     var saved = store.get('online', null);
     if (saved && Date.now() - saved.at < 12 * 3600e3 && saved.local && saved.local.f) {
       var b = $('#m-rejoin');
@@ -514,11 +491,10 @@
     else if (cur === me || (this.cfg.mode === 'local')) {
       t.textContent = this.cfg.mode === 'local' ? this.name(cur) + "'s turn" : 'Your turn';
       t.className = 'turn mine';
-    } else { t.textContent = this.name(1 - me) + "'s turn"; t.className = 'turn theirs'; }
-    $('#b-sub').textContent = 'Round ' + (Math.floor((this.busy ? this.turnAtStart : st.turn) / 2) + 1) + ' · ' + st.map.name;
+    } else { t.textContent = 'Enemy turn'; t.className = 'turn theirs'; }
+    $('#b-sub').textContent = 'Round ' + (Math.floor((this.busy ? this.turnAtStart : st.turn) / 2) + 1) + ' · ' + (cur !== me && this.cfg.mode !== 'local' ? this.name(cur) : st.map.name);
 
     // enemy roster
-    $('#b-enemy-name').textContent = this.name(1 - me);
     var ro = $('#b-enemy-roster'); ro.innerHTML = '';
     this.disp.grids[1 - me].ships.forEach(function (s) {
       var c = el('span', 'rs' + (s.sunk ? ' sunk' : ''), s.c);
@@ -550,7 +526,10 @@
       if (sunk) card.classList.add('sunk');
       else if (block || !mine) card.classList.add('off');
       else card.classList.add('ready');
+      if (!ab.ends) card.classList.add('free');
       if (self.sel === a.id) card.classList.add('sel');
+      var icon = el('canvas'); card.insertBefore(icon, card.firstChild);
+      drawShipIcon(icon, a.cls, FC.SHIPS[a.cls].size * 15, 16);
       card.appendChild(el('span', 'cls', FC.SHIPS[a.cls].name.toUpperCase()));
       card.appendChild(el('span', 'nm', ab.name));
       card.appendChild(el('span', 'cost', ab.cost + ' CP'));
@@ -676,6 +655,7 @@
           } else if (e.r === 'sunk') {
             G.ships[e.ship].sunk = true;
             b.explode(e.i, true);
+            b.sink(e.ship);
             b.popText(e.i, 'SUNK', '#ff6a4a');
             FC.buzz(ownGrid ? [200, 80, 260] : [80, 40, 80]);
             banner(shipName + ' sunk', ownGrid ? 'You lost your ' + shipName : 'Enemy ' + shipName + ' destroyed', ownGrid ? '#ff9b85' : '');
@@ -1179,6 +1159,10 @@
     builderPointer();
     battlePointer();
     menuInit();
+    FC.loadShipArt(function () {
+      if (App.screen === 'fleet' && builder) builder.render();
+      if (App.battle) App.battle.hud();
+    });
     window.FleetCommand = App;
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

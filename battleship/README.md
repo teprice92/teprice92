@@ -78,7 +78,7 @@ Everything you're likely to tweak lives in **`js/data.js`**:
 - **New ship class**: add an entry to `FC.SHIPS` (name, size, fleet points, ability, hull colour) and list its key in `FC.SHIP_ORDER`. To give it a brand-new ability, add it to `FC.ABILITIES`, add its area to `FC.patternCells` in `engine.js`, and add a `case` in `FC.applyAction`.
 - **New map**: add an entry to `FC.MAPS`. `terrain` is an array of strings where `#` is an island. `seaMines` adds hidden mines. `event` adds a recurring hazard (`lightning` or `kraken`).
 - **Economy**: `FC.RULES` holds CP per turn, CP per sink, the CP cap and the fleet size limits.
-- **Ship artwork**: `FC.drawShip` in `js/fx.js` draws each class. Add a `case` for your new class.
+- **Ship artwork**: each class's sprite is an SVG in `js/art.js` (top-down, bow to the right, 40 units per cell). A class without a sprite falls back to the simple drawing in `FC.drawShip` in `js/fx.js`.
 
 ## Files
 
@@ -89,6 +89,7 @@ battleship/
   js/data.js        ships, abilities, maps, rules
   js/engine.js      deterministic rules engine
   js/ai.js          computer opponent (probability map + ability heuristics)
+  js/art.js         ship sprites (SVG, from the design canvas)
   js/fx.js          canvas renderer, animations, synthesized sound
   js/net.js         online transports (PeerJS / claude.ai room)
   js/main.js        screens, fleet builder, battle flow

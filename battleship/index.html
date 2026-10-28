@@ -21,12 +21,24 @@
 
   <!-- ============ MAIN MENU ============ -->
   <section id="scr-menu" class="screen active">
-    <div class="menu-hero">
-      <canvas id="menu-sea" class="hero-sea" aria-hidden="true"></canvas>
-      <div class="logo">
-        <span class="logo-top">Fleet</span>
-        <span class="logo-bot">Command</span>
-      </div>
+    <div class="title-scene" aria-hidden="true">
+      <div class="sky"></div>
+      <div class="moon"></div>
+      <div class="moon-path"></div>
+      <div class="horizon"></div>
+      <svg class="silhouette" viewBox="0 0 220 46">
+        <path d="M4 34 L216 34 L204 44 L16 44 Z"/>
+        <path d="M40 34 V26 H70 V18 H84 V8 H92 V18 H108 V24 H140 V34 Z"/>
+        <path d="M150 30 H180 M30 30 H6" stroke="#061019" stroke-width="3"/>
+        <rect x="112" y="16" width="8" height="10"/>
+        <circle cx="96" cy="22" r="1.4" class="lamp"/>
+        <circle cx="64" cy="29" r="1.2" class="lamp"/>
+      </svg>
+      <div class="flash"></div>
+    </div>
+    <div class="logo">
+      <span class="logo-top">Fleet</span>
+      <span class="logo-bot">Command</span>
     </div>
     <p class="tagline">Build a fleet. Bank command points. Sink theirs first.</p>
     <nav class="menu-buttons">
@@ -149,7 +161,7 @@
     </header>
     <div class="battle">
       <div class="rosters">
-        <div class="roster"><span class="label" id="b-enemy-name">Enemy</span><div id="b-enemy-roster" class="roster-ships"></div></div>
+        <div class="roster"><span class="label">Enemy fleet</span><div id="b-enemy-roster" class="roster-ships"></div></div>
       </div>
       <div class="seg tabs" id="b-tabs">
         <button class="seg-btn on" data-view="enemy">Enemy waters</button>
@@ -239,6 +251,7 @@
 <script src="js/data.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/ai.js"></script>
+<script src="js/art.js"></script>
 <script src="js/fx.js"></script>
 <script src="js/net.js"></script>
 <script src="js/main.js"></script>
