@@ -58,6 +58,7 @@
     $('#set-sound').checked = FC.settings.sound;
     $('#set-vibrate').checked = FC.settings.vibrate;
     $$('#set-speed .seg-btn').forEach(function (b) { b.classList.toggle('on', +b.dataset.speed === FC.settings.speed); });
+    $$('#set-gfx .seg-btn').forEach(function (b) { b.classList.toggle('on', b.dataset.gfx === FC.settings.gfx); });
     $('#b-sound').style.opacity = FC.settings.sound ? 1 : 0.35;
   }
 
@@ -419,7 +420,7 @@
   function Battle(st, cfg) {
     this.st = st;
     this.cfg = cfg;          // {mode, me(), names, level, onAction(a, idx), net}
-    this.board = Battle.board || (Battle.board = new FC.Board($('#b-board')));
+    this.board = pickBoard();
     this.disp = snapshot(st);
     this.busy = false;
     this.sel = null; this.orient = 0; this.aimCell = -1;
@@ -838,8 +839,39 @@
     setTimeout(function () { if (App.battle === self) openOv('ov-result'); }, 1300);
   };
 
+  // The 3D board when it's switched on and loaded, otherwise the 2D one.
+  function pickBoard() {
+    var b = null;
+    if (FC.settings.gfx !== '2d' && FC.Board3D) {
+      try {
+        b = Battle.b3 || (Battle.b3 = new FC.Board3D($('#b-board3d')));
+        b.setQuality(FC.settings.gfx);
+      } catch (e) {
+        console.warn('3D board failed, using 2D', e);
+        b = null;
+      }
+    }
+    $('#b-board3d').classList.toggle('hidden', !b);
+    $('#b-board').classList.toggle('hidden', !!b);
+    return b || Battle.b2 || (Battle.b2 = new FC.Board($('#b-board')));
+  }
+  function applyGraphics() {
+    var B = App.battle;
+    var swap = function () {
+      if (!B || App.battle !== B || B.busy) return;
+      B.board.clearFx();
+      B.board = pickBoard();
+      B.renderBoard();
+      B.hud();
+    };
+    if (FC.settings.gfx !== '2d') FC.load3D().then(function (ok) { if (!ok) toast('3D graphics could not load on this device.', 'bad'); swap(); });
+    else swap();
+  }
+
   function battlePointer() {
-    var cv = $('#b-board'), down = false;
+    var down = false;
+    ['#b-board', '#b-board3d'].forEach(function (sel) { bindBoard($(sel)); });
+    function bindBoard(cv) {
     cv.addEventListener('pointerdown', function (e) {
       FC.Sound.init();
       var B = App.battle; if (!B) return;
@@ -863,6 +895,7 @@
       B.tapCell(B.board.cellAt(e.clientX, e.clientY));
     });
     cv.addEventListener('pointercancel', function () { down = false; });
+    }
     $$('#b-tabs .seg-btn').forEach(function (b) {
       b.onclick = function () { var B = App.battle; if (B && !B.busy) { B.setView(b.dataset.view); B.hud(); } };
     });
@@ -908,8 +941,8 @@
   }
 
   function quitToMenu() {
+    if (App.battle) App.battle.board.clearFx();
     App.battle = null;
-    if (Battle.board) Battle.board.clearFx();
     closeOv('ov-result');
     if (App.net) leaveOnline();
     show('menu');
@@ -1132,6 +1165,8 @@
 
   // ---- wiring ------------------------------------------------------------------------
   function init() {
+    if (!FC.settings.gfx || (FC.settings.gfx !== '2d' && !FC.webglOK())) FC.settings.gfx = FC.webglOK() ? 'high' : '2d';
+    if (FC.settings.gfx !== '2d') FC.load3D();
     syncSettingsUI();
     document.addEventListener('pointerdown', function () { FC.Sound.init(); }, { once: true });
     $$('[data-go]').forEach(function (b) { b.onclick = function () { FC.Sound.init(); startSetup(b.dataset.go); }; });
@@ -1153,6 +1188,12 @@
     $('#set-sound').onchange = function (e) { FC.settings.sound = e.target.checked; FC.Sound.init(); saveSettings(); };
     $('#set-vibrate').onchange = function (e) { FC.settings.vibrate = e.target.checked; saveSettings(); };
     $$('#set-speed .seg-btn').forEach(function (b) { b.onclick = function () { FC.settings.speed = +b.dataset.speed; saveSettings(); }; });
+    $$('#set-gfx .seg-btn').forEach(function (b) {
+      b.onclick = function () {
+        if (b.dataset.gfx !== '2d' && !FC.webglOK()) { toast('This device does not support 3D graphics.', 'bad'); return; }
+        FC.settings.gfx = b.dataset.gfx; saveSettings(); applyGraphics();
+      };
+    });
     $('#r-again').onclick = rematch;
     $('#r-menu').onclick = quitToMenu;
     $('#r-view').onclick = function () { closeOv('ov-result'); var B = App.battle; if (B) { B.setView('enemy'); B.hud(); } };

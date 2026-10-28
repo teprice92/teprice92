@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Saira+Condensed:wght@400;500;600;700&family=Saira+Stencil+One&display=swap">
 <link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
 <div id="app">
@@ -169,6 +170,7 @@
       </div>
       <div class="board-wrap">
         <canvas id="b-board" class="board" aria-label="Battle board"></canvas>
+        <canvas id="b-board3d" class="board board3d hidden" aria-label="3D battle board"></canvas>
         <div id="b-net" class="net-warn hidden">Connection lost. Waiting for your buddy…</div>
       </div>
       <div id="b-log" class="log">Pick a target.</div>
@@ -227,6 +229,14 @@
       <label class="toggle"><input type="checkbox" id="set-sound" checked><span>Sound effects</span></label>
       <label class="toggle"><input type="checkbox" id="set-vibrate" checked><span>Vibration on hits</span></label>
       <div class="field">
+        <span class="label">Graphics</span>
+        <div class="seg" id="set-gfx">
+          <button class="seg-btn" data-gfx="high">3D High</button>
+          <button class="seg-btn" data-gfx="lite">3D Lite</button>
+          <button class="seg-btn" data-gfx="2d">Classic 2D</button>
+        </div>
+      </div>
+      <div class="field">
         <span class="label">Animation speed</span>
         <div class="seg" id="set-speed">
           <button class="seg-btn on" data-speed="1">Cinematic</button>
@@ -253,6 +263,7 @@
 <script src="js/ai.js"></script>
 <script src="js/art.js"></script>
 <script src="js/fx.js"></script>
+<script src="js/fx3d.js"></script>
 <script src="js/net.js"></script>
 <script src="js/main.js"></script>
 </body>

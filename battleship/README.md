@@ -2,7 +2,9 @@
 
 A Battleship-style naval game for phones and desktops. Build your own fleet from 12 ship classes, earn command points, and spend them on abilities like air strikes, sonar, torpedoes, shields and repairs. You can also bank points over several turns for bigger abilities.
 
-Plain HTML, CSS and JavaScript. No build step, no image or sound files: everything is drawn on `<canvas>` and every sound effect is generated with the Web Audio API.
+Plain HTML, CSS and JavaScript with no build step and no image or sound files. The battle board is rendered in **3D with [Three.js](https://threejs.org/)**: a Gerstner-wave ocean, physical sky and per-map lighting, modelled ships, islands, bloom and particle effects. A **Classic 2D** canvas renderer is kept as a fallback for devices without WebGL. Every sound effect is generated with the Web Audio API.
+
+Switch between **3D High**, **3D Lite** (no bloom, lower resolution, for older phones) and **Classic 2D** in Settings. If Three.js can't load, the game falls back to 2D automatically.
 
 ## Game modes
 
@@ -90,7 +92,8 @@ battleship/
   js/engine.js      deterministic rules engine
   js/ai.js          computer opponent (probability map + ability heuristics)
   js/art.js         ship sprites (SVG, from the design canvas)
-  js/fx.js          canvas renderer, animations, synthesized sound
+  js/fx.js          2D canvas renderer, animations, synthesized sound
+  js/fx3d.js        3D renderer (Three.js, loaded from jsDelivr on demand)
   js/net.js         online transports (PeerJS / claude.ai room)
   js/main.js        screens, fleet builder, battle flow
 ```
