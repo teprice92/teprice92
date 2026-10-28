@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fleet Command</title>
+<meta name="description" content="Naval battle game with ship abilities, command points, custom fleets and maps. Play the computer, pass-and-play, or online with a friend.">
+<meta name="theme-color" content="#061722">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Saira+Condensed:wght@400;500;600;700&family=Saira+Stencil+One&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ MAIN MENU ============ -->
+  <section id="scr-menu" class="screen active">
+    <div class="menu-hero">
+      <canvas id="menu-sea" class="hero-sea" aria-hidden="true"></canvas>
+      <div class="logo">
+        <span class="logo-top">Fleet</span>
+        <span class="logo-bot">Command</span>
+      </div>
+    </div>
+    <p class="tagline">Build a fleet. Bank command points. Sink theirs first.</p>
+    <nav class="menu-buttons">
+      <button class="btn btn-primary" data-go="ai">Battle the Computer</button>
+      <button class="btn" data-go="online">Play a Friend Online</button>
+      <button class="btn" data-go="local">Pass &amp; Play</button>
+      <button class="btn btn-ghost hidden" id="m-rejoin">Rejoin room</button>
+      <div class="menu-row">
+        <button class="btn btn-ghost" data-open="ov-guide">Ship Guide</button>
+        <button class="btn btn-ghost" data-open="ov-settings">Settings</button>
+      </div>
+    </nav>
+  </section>
+
+  <!-- ============ GAME SETUP ============ -->
+  <section id="scr-setup" class="screen">
+    <header class="bar">
+      <button class="icon-btn" data-back aria-label="Back">&#8592;</button>
+      <h2 id="s-title">New Battle</h2>
+      <span></span>
+    </header>
+    <div class="scroll">
+      <div id="s-online-tabs" class="seg" role="tablist">
+        <button class="seg-btn on" data-tab="host" role="tab">Host a room</button>
+        <button class="seg-btn" data-tab="join" role="tab">Join a room</button>
+      </div>
+
+      <label class="field" id="s-name1-wrap">
+        <span class="label" id="s-name1-label">Your name</span>
+        <input id="s-name1" maxlength="16" autocomplete="off" placeholder="Captain">
+      </label>
+      <label class="field" id="s-name2-wrap">
+        <span class="label">Player 2 name</span>
+        <input id="s-name2" maxlength="16" autocomplete="off" placeholder="Captain 2">
+      </label>
+
+      <div id="s-join" class="hidden">
+        <label class="field">
+          <span class="label">Room code from your friend</span>
+          <input id="s-code" class="code-input" maxlength="5" autocomplete="off" autocapitalize="characters" placeholder="ABCDE">
+        </label>
+      </div>
+
+      <div id="s-ai" class="field">
+        <span class="label">Enemy admiral</span>
+        <div class="seg" id="s-level">
+          <button class="seg-btn" data-level="easy">Rookie</button>
+          <button class="seg-btn on" data-level="normal">Veteran</button>
+          <button class="seg-btn" data-level="hard">Admiral</button>
+        </div>
+      </div>
+
+      <div id="s-maps-wrap" class="field">
+        <span class="label">Theatre of war</span>
+        <div id="s-maps" class="map-list"></div>
+      </div>
+    </div>
+    <footer class="foot">
+      <button class="btn btn-primary" id="s-go">Build fleet</button>
+    </footer>
+  </section>
+
+  <!-- ============ ONLINE LOBBY ============ -->
+  <section id="scr-lobby" class="screen">
+    <header class="bar">
+      <button class="icon-btn" id="l-leave" aria-label="Leave room">&#8592;</button>
+      <h2>Online Room</h2>
+      <span></span>
+    </header>
+    <div class="scroll lobby">
+      <p class="label">Room code</p>
+      <div class="room-code" id="l-code">-----</div>
+      <button class="btn btn-small" id="l-copy">Copy code</button>
+      <p class="lobby-help" id="l-help">Send this code to your buddy. They open Fleet Command, choose <b>Play a Friend Online → Join a room</b>, and type it in.</p>
+      <div class="status-line"><span class="dot" id="l-dot"></span><span id="l-status">Connecting…</span></div>
+      <p class="fine" id="l-transport"></p>
+    </div>
+  </section>
+
+  <!-- ============ FLEET BUILDER ============ -->
+  <section id="scr-fleet" class="screen">
+    <header class="bar">
+      <button class="icon-btn" id="f-back" aria-label="Back">&#8592;</button>
+      <h2 id="f-title">Build your fleet</h2>
+      <span class="chip" id="f-map"></span>
+    </header>
+    <div class="scroll fleet-layout">
+      <div class="fleet-board">
+        <canvas id="f-board" class="board" aria-label="Placement board"></canvas>
+        <p class="fine center">Drag ships to move them. Tap a ship to rotate it.</p>
+        <div class="row">
+          <button class="btn btn-small" id="f-random">Shuffle</button>
+          <button class="btn btn-small" id="f-classic">Classic fleet</button>
+        </div>
+      </div>
+      <div class="fleet-side">
+        <div class="budget">
+          <div class="budget-top"><span class="label">Fleet points</span><span id="f-pts" class="mono">0 / 18</span></div>
+          <div class="meter"><i id="f-meter"></i></div>
+          <div class="fine" id="f-rule"></div>
+        </div>
+        <ul id="f-list" class="ship-list"></ul>
+      </div>
+    </div>
+    <footer class="foot">
+      <span class="fine" id="f-err"></span>
+      <button class="btn btn-primary" id="f-ready">Ready for battle</button>
+    </footer>
+  </section>
+
+  <!-- ============ BATTLE ============ -->
+  <section id="scr-battle" class="screen">
+    <header class="bar battle-bar">
+      <button class="icon-btn" id="b-menu" aria-label="Menu">&#9776;</button>
+      <div class="turn-box">
+        <div id="b-turn" class="turn">Your turn</div>
+        <div id="b-sub" class="fine mono">Round 1</div>
+      </div>
+      <button class="icon-btn" id="b-sound" aria-label="Toggle sound">&#9835;</button>
+    </header>
+    <div class="battle">
+      <div class="rosters">
+        <div class="roster"><span class="label" id="b-enemy-name">Enemy</span><div id="b-enemy-roster" class="roster-ships"></div></div>
+      </div>
+      <div class="seg tabs" id="b-tabs">
+        <button class="seg-btn on" data-view="enemy">Enemy waters</button>
+        <button class="seg-btn" data-view="own">My fleet</button>
+      </div>
+      <div class="board-wrap">
+        <canvas id="b-board" class="board" aria-label="Battle board"></canvas>
+        <div id="b-net" class="net-warn hidden">Connection lost. Waiting for your buddy…</div>
+      </div>
+      <div id="b-log" class="log">Pick a target.</div>
+      <div class="cp-row">
+        <span class="label">Command points</span>
+        <div id="b-cp" class="cp-pips"></div>
+        <span id="b-cp-num" class="mono cp-num">0</span>
+      </div>
+      <div id="b-abilities" class="abilities"></div>
+      <div class="actions">
+        <button class="btn btn-small hidden" id="b-cancel">Cancel</button>
+        <button class="btn btn-small hidden" id="b-rotate">Rotate ⟳</button>
+        <button class="btn btn-fire" id="b-fire" disabled>Fire</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OVERLAYS ============ -->
+  <div id="ov-handoff" class="overlay">
+    <div class="sheet center">
+      <p class="label">Pass the phone to</p>
+      <h2 id="h-name" class="big-name">Captain 2</h2>
+      <ul id="h-report" class="report"></ul>
+      <button class="btn btn-primary" id="h-ready">I'm ready</button>
+    </div>
+  </div>
+
+  <div id="ov-result" class="overlay">
+    <div class="sheet center">
+      <h2 id="r-title" class="result-title">Victory</h2>
+      <p id="r-sub" class="fine"></p>
+      <div id="r-stats" class="stats"></div>
+      <div class="col">
+        <button class="btn btn-primary" id="r-again">Rematch</button>
+        <button class="btn" id="r-view">Review the boards</button>
+        <button class="btn btn-ghost" id="r-menu">Main menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ov-pause" class="overlay">
+    <div class="sheet center">
+      <h2>Paused</h2>
+      <div class="col">
+        <button class="btn btn-primary" data-close>Resume</button>
+        <button class="btn" data-open="ov-guide">Ship Guide</button>
+        <button class="btn" data-open="ov-settings">Settings</button>
+        <button class="btn btn-danger" id="p-quit">Leave battle</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ov-settings" class="overlay">
+    <div class="sheet">
+      <h2>Settings</h2>
+      <label class="toggle"><input type="checkbox" id="set-sound" checked><span>Sound effects</span></label>
+      <label class="toggle"><input type="checkbox" id="set-vibrate" checked><span>Vibration on hits</span></label>
+      <div class="field">
+        <span class="label">Animation speed</span>
+        <div class="seg" id="set-speed">
+          <button class="seg-btn on" data-speed="1">Cinematic</button>
+          <button class="seg-btn" data-speed="1.8">Fast</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" data-close>Done</button>
+    </div>
+  </div>
+
+  <div id="ov-guide" class="overlay">
+    <div class="sheet guide">
+      <header class="bar"><h2>Ship Guide</h2><button class="icon-btn" data-close aria-label="Close">&#10005;</button></header>
+      <div class="scroll" id="g-body"></div>
+    </div>
+  </div>
+
+  <div id="banner" class="banner" aria-live="polite"><div class="banner-main"></div><div class="banner-sub"></div></div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/net.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "Fleet Command",
+  "short_name": "Fleet Cmd",
+  "description": "Naval battle game with ship abilities, command points, custom fleets and maps.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#061722",
+  "theme_color": "#061722",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
