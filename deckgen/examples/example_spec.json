@@ -1,0 +1,164 @@
+{
+  "properties": {
+    "title": "Ops Weekly Review",
+    "author": "deckgen"
+  },
+  "slides": [
+    {
+      "layout": "Title Slide",
+      "title": "Ops Weekly Review",
+      "subtitle": "Week 43 \u00b7 auto-generated draft"
+    },
+    {
+      "layout": "Title and Content",
+      "title": "Highlights",
+      "body": [
+        "Uptime 99.97% across all services",
+        {
+          "text": "Ticket backlog down 18%",
+          "bold": true
+        },
+        [
+          "Tier 1: 42 \u2192 31",
+          "Tier 2: 17 \u2192 15"
+        ],
+        "Two incidents, both resolved < 1h"
+      ],
+      "notes": "Mention the DB failover test on Thursday."
+    },
+    {
+      "layout": "Title and Content",
+      "title": "Dashboard snapshot",
+      "image": {
+        "path": "img/dashboard.png",
+        "caption": "Service health, last 7 days"
+      }
+    },
+    {
+      "layout": "Title and Content",
+      "title": "Bullets beside an image",
+      "body": [
+        "Text on the left, image on the right",
+        "Happens automatically when the layout has one content area",
+        "Set graphic_side: left to flip"
+      ],
+      "image": "img/site_b.png"
+    },
+    {
+      "layout": "Title Only",
+      "title": "Site photos (grid)",
+      "images": {
+        "columns": 3,
+        "items": [
+          {
+            "path": "img/site_a.png",
+            "caption": "Site A"
+          },
+          {
+            "path": "img/site_b.png",
+            "caption": "Site B"
+          },
+          {
+            "path": "img/site_c.png",
+            "caption": "Site C"
+          }
+        ]
+      }
+    },
+    {
+      "layout": "Title and Content",
+      "title": "Image passed as base64 (cover fit)",
+      "image": {
+        "base64": "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NetRp5x212iP5pYkVa4vnTL++ERf5pYk1a8XnTLhOcJezC1J6oX6O2XyA/X1zy1J6ovKO2VyEfpMhSQpo5q7cN0itAslSRlV24XTitAulCRlVGcXzihCu1CSlFGFXTi7CO1CSVJGtXVhUBHahZKkjKrqwtAitAslSRnV04URRWgXSpIyqqQL44pweF14x2cuT/9HPbF4z/994Ks3/vbBm/b+9Mn7Tv17Hnvwltv/+bKVP/nx43c/fPhT6ReSpIGqoQuji3B4XZjs4SP/uHDms3b96qe3vezt99x17crfc/zYk/cf+shodMbKnzzz7Iuef+Hbki8kSQPWeRemFOHAuvDeAx86eNPen32q+86PH7/74E2/c+A/fv2hb3y8aZqH7r7uy5//za98/s0/fPgLx44+fvjWdx767987eNPeJx450DTND+75t+e95M1N0zx322ufvWX18999B/7mBRdf3YxOy3blo+cdn7n8yO1//qXPvv67hz99+NZ3fumzVy1fa+zST//kB9/4wh8evGnv4duuufNffqlpmrUDSNIwdNuFiUU4mC48sXj0WZsv3Xnldede8Fv33PXXD939ye0/96c7r7zuga9/rGmaBw5+ZOeV1134mg9//55/vffAtc+/eO8lr/37i6740LfufN9SdT3x7UcfuPHQzVd/c/+fnPPCNy6v44++f+fRn3x3y/Y3rbedJ47/9NwL37pz98e/9cX3L/2Fuz++fK2xS9974Npztr9p55XXnXP+6xePPdU0S38yNoAkDUaHXZhehEPpwtE55/9a0zTnbH/jEz/40ote8Y4fP37kga999PixJ5qmec62Xzl82zVHn3rowss/+MOHvnDfgQ8fuvnqw7dds3jsqRMnjp9YfHrjpvMu2f2JrS/6jSN3vKdpmsXFo/fede1Lfv6901ZztPCszbuesWnbwsKZZ22+dOOm8xaP/6RpmrFLP/7d28554RuWPm6et3v5w+XaAQbzPwBJ6rBTWhVhh3NnMxqtfIc5WnjGN//3j5umecHFe0c/S+bCX/yrbRe//eHDnzpy+5+dOHHs5b/80Ut2f+KS1/7DBa/+wGi04cyNWzaf/7qmaTaf/7qnfvj1pmke/c7njh978vCt7zh089WLx546fNs1a+ccLZw5Gm1omma0YeOpX5+OXfrE4tMnzz2xuPwf1g6QLQRJqkMnnwvb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",
+        "fit": "cover"
+      }
+    },
+    {
+      "layout": "Title and Content",
+      "title": "Ticket volume",
+      "chart": {
+        "type": "column",
+        "categories": [
+          "W40",
+          "W41",
+          "W42",
+          "W43"
+        ],
+        "series": {
+          "Opened": [
+            120,
+            135,
+            110,
+            98
+          ],
+          "Closed": [
+            115,
+            140,
+            125,
+            112
+          ]
+        },
+        "data_labels": true
+      }
+    },
+    {
+      "layout": "Two Content",
+      "title": "Chart + table",
+      "columns": [
+        {
+          "chart": {
+            "type": "line",
+            "categories": [
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri"
+            ],
+            "series": {
+              "p95 ms": [
+                210,
+                190,
+                240,
+                180,
+                175
+              ]
+            }
+          }
+        },
+        {
+          "table": {
+            "header": [
+              "Service",
+              "Uptime",
+              "Incidents"
+            ],
+            "rows": [
+              [
+                "API",
+                "99.99%",
+                0
+              ],
+              [
+                "Web",
+                "99.95%",
+                1
+              ],
+              [
+                "Batch",
+                "99.90%",
+                1
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "layout": "Picture with Caption",
+      "title": "Picture placeholder",
+      "image": "img/site_a.png",
+      "body": "Fills the template's own picture placeholder."
+    }
+  ]
+}

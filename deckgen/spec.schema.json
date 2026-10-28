@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "deckgen slide spec",
+  "type": "object",
+  "required": ["slides"],
+  "$defs": {
+    "box": {
+      "type": "object",
+      "description": "Position in inches, or strings like \"50%\" for a fraction of slide size.",
+      "properties": {
+        "left": {"type": ["number", "string"]}, "top": {"type": ["number", "string"]},
+        "width": {"type": ["number", "string"]}, "height": {"type": ["number", "string"]}
+      }
+    },
+    "textItem": {
+      "oneOf": [
+        {"type": "string"},
+        {"type": "object", "properties": {
+          "text": {"type": "string"}, "bold": {"type": "boolean"}, "italic": {"type": "boolean"},
+          "size": {"type": "number"}, "color": {"type": "string", "description": "hex, e.g. #1F9E8F"},
+          "runs": {"type": "array"}, "children": {"type": "array", "description": "sub-bullets"}}}
+      ]
+    },
+    "text": {
+      "description": "A string (\\n for new paragraphs) or a bullet list. A nested array = sub-bullets.",
+      "oneOf": [{"type": "string"}, {"type": "array"}]
+    },
+    "image": {
+      "description": "A path, an http(s) URL, a data: URI, or an object.",
+      "oneOf": [
+        {"type": "string"},
+        {"type": "object", "properties": {
+          "path": {"type": "string"}, "url": {"type": "string"},
+          "base64": {"type": "string"}, "data_uri": {"type": "string"},
+          "fit": {"enum": ["contain", "cover"]}, "caption": {"type": "string"},
+          "box": {"$ref": "#/$defs/box"}}}
+      ]
+    },
+    "images": {
+      "oneOf": [
+        {"type": "array", "items": {"$ref": "#/$defs/image"}},
+        {"type": "object", "required": ["items"], "properties": {
+          "items": {"type": "array", "items": {"$ref": "#/$defs/image"}},
+          "columns": {"type": "integer"}, "gap_in": {"type": "number"},
+          "fit": {"enum": ["contain", "cover"]}, "box": {"$ref": "#/$defs/box"}}}
+      ]
+    },
+    "chart": {
+      "type": "object", "required": ["categories", "series"],
+      "properties": {
+        "type": {"enum": ["column", "bar", "stacked_column", "stacked_bar", "line", "line_plain", "pie", "doughnut", "area"]},
+        "categories": {"type": "array"},
+        "series": {"description": "{\"name\": [values]} or [{\"name\":..., \"values\": [...]}]",
+                   "oneOf": [{"type": "object"}, {"type": "array"}]},
+        "title": {"type": "string"}, "legend": {"type": "boolean"},
+        "data_labels": {"type": "boolean"}, "number_format": {"type": "string"},
+        "box": {"$ref": "#/$defs/box"}}
+    },
+    "table": {
+      "type": "object",
+      "properties": {
+        "header": {"type": "array"}, "rows": {"type": "array", "items": {"type": "array"}},
+        "font_size": {"type": "number"}, "col_widths_in": {"type": "array", "items": {"type": "number"}},
+        "row_height_in": {"type": "number"}, "box": {"$ref": "#/$defs/box"}}
+    },
+    "content": {
+      "description": "Text, or an object holding one graphic.",
+      "oneOf": [
+        {"$ref": "#/$defs/text"},
+        {"type": "object", "properties": {
+          "chart": {"$ref": "#/$defs/chart"}, "table": {"$ref": "#/$defs/table"},
+          "image": {"$ref": "#/$defs/image"}, "images": {"$ref": "#/$defs/images"}}}
+      ]
+    }
+  },
+  "properties": {
+    "defaults": {"type": "object", "properties": {
+      "layout": {"type": ["string", "integer"]}, "remove_empty_placeholders": {"type": "boolean"}}},
+    "keep_template_slides": {"type": "boolean"},
+    "properties": {"type": "object", "description": "core doc properties: title, author, subject..."},
+    "slides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "layout": {"type": ["string", "integer"], "description": "Layout name (see `deckgen inspect`) or index"},
+          "title": {"$ref": "#/$defs/text"},
+          "subtitle": {"$ref": "#/$defs/text"},
+          "body": {"$ref": "#/$defs/content"},
+          "columns": {"type": "array", "items": {"$ref": "#/$defs/content"},
+                      "description": "One entry per content placeholder, left to right"},
+          "chart": {"$ref": "#/$defs/chart"},
+          "table": {"$ref": "#/$defs/table"},
+          "image": {"$ref": "#/$defs/image"},
+          "images": {"$ref": "#/$defs/images"},
+          "graphic_side": {"enum": ["left", "right"]},
+          "placeholders": {"type": "object", "description": "Target placeholders by idx: {\"13\": text | {chart|table|image}}"},
+          "notes": {"type": "string"},
+          "font_size": {"type": "number"},
+          "body_box": {"$ref": "#/$defs/box"},
+          "remove_empty_placeholders": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}
